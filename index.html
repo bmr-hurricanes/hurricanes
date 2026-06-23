@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="East Lodge Hurricanes">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>East Lodge Hurricanes - Summer League Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&display=swap');
+  :root {
+    --primary: #0d0d0d;
+    --primary-dark: #000000;
+    --accent: #ffffff;
+    --gold: #e0e0e0;
+    --gold-dark: #b0b0b0;
+    --white: #ffffff;
+    --grey-50: #f9fafb;
+    --grey-100: #f3f4f6;
+    --grey-200: #e5e7eb;
+    --grey-400: #9ca3af;
+    --grey-600: #4b5563;
+    --grey-800: #1f2937;
+    --red: #dc2626;
+    --green: #16a34a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, var(--grey-100) 0%, #f0f4f8 100%);
+    color: var(--grey-800);
+    min-height: 100vh;
+    background-attachment: fixed;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-image:
+      radial-gradient(circle at 20% 50%, rgba(13,13,13,0.03) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(13,13,13,0.02) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+  }
+  header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: var(--white);
+    padding: 32px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 90;
+    overflow: hidden;
+    border-bottom: 3px solid rgba(255,255,255,0.3);
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    top: 0; right: -100px;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  header div { position: relative; z-index: 1; }
+  .header-badge {
+    background: var(--white);
+    color: var(--primary);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 1px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+    font-weight: 700;
+    display: inline-block;
+    margin-top: 8px;
+  }
+  header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+  header .header-meta {
+    font-size: 13px;
+    color: rgba(255,255,255,0.55);
+    margin-top: 4px;
+  }
+  .main { max-width: 900px; margin: 0 auto; padding: 24px 16px 100px; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--white);
+    border-top: 1px solid var(--grey-200);
+    display: flex;
+    z-index: 100;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 4px 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    gap: 3px;
+    color: var(--grey-400);
+    font-family: 'Inter', sans-serif;
+    transition: color 0.15s;
+  }
+  .nav-item.active { color: var(--primary); }
+  .nav-icon { font-size: 22px; line-height: 1; }
+  .nav-label { font-size: 10px; font-weight: 600; letter-spacing: 0.3px; }
+
+  .btn {
+    background: var(--primary);
+    color: var(--white);
+    border: none;
+    border-radius: 6px;
+    padding: 9px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: #333; }
+  .btn-secondary { background: var(--grey-800); }
+  .btn-secondary:hover { background: var(--grey-600); }
+  .btn-danger { background: var(--red); }
+  .btn-danger:hover { background: #b91c1c; }
+
+  .section {
+    background: var(--white);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .section h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 1px;
+    color: var(--primary);
+    margin-bottom: 24px;
+    display: inline-block;
+  }
+  .section h3::after {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 3px;
+    background: var(--primary);
+    border-radius: 2px;
+    margin-top: 8px;
+  }
+
+  .match-card {
+    background: var(--white);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 12px;
+    border-left: 4px solid var(--primary);
+  }
+  .next-match-card {
+    background: linear-gradient(135deg, var(--primary) 0%, #1a1a1a 100%);
+    border-radius: 12px;
+    padding: 24px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    text-align: center;
+    color: var(--white);
+    border-bottom: 3px solid rgba(255,255,255,0.25);
+  }
+  .next-match-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.55);
+    margin-bottom: 12px;
+  }
+  .next-match-teams {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+    display: inline-block;
+  }
+  .next-match-teams::after {
+    content: '';
+    display: block;
+    width: 50px;
+    height: 3px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 2px;
+    margin: 8px auto 0;
+  }
+  .next-match-detail {
+    font-size: 13px;
+    color: rgba(255,255,255,0.65);
+    margin-bottom: 14px;
+  }
+  .next-match-times {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 34px;
+    color: var(--white);
+    line-height: 1;
+  }
+  .match-scorers {
+    font-size: 11px;
+    color: var(--grey-400);
+    text-align: center;
+    margin-top: 4px;
+  }
+  .match-potm {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--grey-600);
+    text-align: center;
+    margin-top: 4px;
+  }
+  .match-notes { grid-column: 1 / -1; font-size: 12px; color: rgba(255,255,255,0.6); text-align: center; margin-top: 4px; margin-bottom: 10px; font-style: italic; }
+  .match-notes.light { color: var(--grey-500); }
+
+  .form-string { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 6px; }
+  .form-string .w { color: var(--green); }
+  .form-string .d { color: var(--grey-400); }
+  .form-string .l { color: var(--red); }
+
+  .match-team { font-size: 14px; font-weight: 600; }
+  .match-team.home { text-align: right; }
+  .match-team.away { text-align: left; }
+  .match-meta { font-size: 11px; color: var(--grey-400); margin-top: 4px; }
+  .match-team.home .match-meta { text-align: right; }
+  .score-display { font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: var(--primary); text-align: center; }
+  .score-display.result { font-size: 18px; }
+  .fixture-status { font-size: 11px; color: var(--grey-600); font-weight: 600; margin-top: 4px; }
+
+  .table { width: 100%; border-collapse: collapse; }
+  .table th { background: var(--primary); color: white; padding: 12px; text-align: left; font-size: 12px; font-weight: 600; }
+  .table th.sortable { cursor: pointer; user-select: none; }
+  .table th.sortable .sort-arrow { font-size: 10px; margin-left: 3px; opacity: 0.7; }
+  .table td { padding: 12px; border-bottom: 1px solid var(--grey-100); }
+  .table tr:hover { background: var(--grey-50); }
+  .table td:nth-child(n+2) { text-align: center; }
+  .table td:nth-child(1) { text-align: left; }
+  @media (max-width: 600px) {
+    .table { font-size: 12px; }
+    .table th, .table td { padding: 8px 4px; }
+  }
+
+  .leaderboard-item {
+    background: var(--white);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+  }
+  .leaderboard-rank { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--grey-400); min-width: 40px; }
+  .leaderboard-name { font-weight: 600; font-size: 15px; flex: 1; }
+  .leaderboard-goals { font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: var(--primary); }
+
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--grey-600); margin-bottom: 6px; }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%; padding: 8px 12px;
+    border: 1.5px solid var(--grey-200);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    resize: vertical;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--primary); }
+
+  .goal-inputs { display: flex; gap: 8px; margin-bottom: 12px; }
+  .goal-inputs select { flex: 1; }
+  .goal-inputs input { width: 60px; }
+
+  .toast {
+    position: fixed;
+    bottom: 80px; left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--primary);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px; font-weight: 500;
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+    z-index: 999;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.error { background: var(--red); }
+
+  .loading-overlay { text-align: center; padding: 60px 20px; color: var(--grey-400); font-size: 14px; }
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--grey-400); }
+
+  .pull-indicator {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 0;
+    overflow: hidden;
+    background: var(--primary);
+    color: var(--white);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px; font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: height 0.1s ease;
+    z-index: 999;
+  }
+
+  @media (max-width: 600px) {
+    header h1 { font-size: 24px; }
+    header { padding: 24px 18px; }
+    .match-card { grid-template-columns: 1fr auto 1fr; }
+    .table { font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>East Lodge Hurricanes</h1>
+    <div class="header-badge">INTER CITY SUMMER LEAGUE</div>
+    <div class="header-meta">Coaches: Sam Game &amp; Chad Clarke</div>
+  </div>
+  <button onclick="switchTab('admin')" title="Manage" aria-label="Admin" style="position:relative;z-index:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.6);width:38px;height:38px;border-radius:8px;font-size:16px;cursor:pointer;flex-shrink:0;">⚙</button>
+</header>
+
+<div class="main">
+  <div id="tab-fixtures" class="tab-content active">
+    <div id="fixturesContent"><div class="loading-overlay">Loading fixtures…</div></div>
+  </div>
+
+  <div id="tab-results" class="tab-content">
+    <div id="resultsContent"><div class="loading-overlay">Loading results…</div></div>
+  </div>
+
+  <div id="tab-scorers" class="tab-content">
+    <div id="scorersContent"><div class="loading-overlay">Loading stats…</div></div>
+  </div>
+
+  <div id="tab-squad" class="tab-content">
+    <div class="section"><h3>Squad</h3><div id="squadContent"><div class="loading-overlay">Loading squad…</div></div></div>
+  </div>
+
+  <div id="tab-admin" class="tab-content">
+    <div id="adminLock" class="section" style="text-align:center;">
+      <h3>Admin Login</h3>
+      <p style="margin-bottom:16px;color:var(--grey-600);">Sign in to manage fixtures and results</p>
+      <div class="form-group" style="max-width:300px;margin:0 auto;">
+        <input type="email" id="adminEmail" placeholder="Email" autocomplete="username">
+      </div>
+      <div class="form-group" style="max-width:300px;margin:0 auto;">
+        <input type="password" id="adminPassword" placeholder="Password" autocomplete="current-password" onkeypress="if(event.key==='Enter') signInAdmin()">
+      </div>
+      <button class="btn" onclick="signInAdmin()">Sign In</button>
+    </div>
+    <div id="adminContent" style="display:none;"></div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <button class="nav-item active" onclick="switchTab('fixtures')" id="nav-fixtures">
+    <span class="nav-icon">📅</span>
+    <span class="nav-label">Fixtures</span>
+  </button>
+  <button class="nav-item" onclick="switchTab('results')" id="nav-results">
+    <span class="nav-icon">📊</span>
+    <span class="nav-label">Results</span>
+  </button>
+  <button class="nav-item" onclick="switchTab('scorers')" id="nav-scorers">
+    <span class="nav-icon">🏅</span>
+    <span class="nav-label">Stats</span>
+  </button>
+  <button class="nav-item" onclick="switchTab('squad')" id="nav-squad">
+    <span class="nav-icon">⚽</span>
+    <span class="nav-label">Squad</span>
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+<div class="pull-indicator" id="pullIndicator">↻ Release to refresh</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://xlmlgjxztegstzsdgklo.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhsbWxnanh6dGVnc3R6c2Rna2xvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNjAyMzQsImV4cCI6MjA5NjgzNjIzNH0.b-lyHkzYEKMdmxZZPg36PnHPNWT9Tc1H4wxL43JBsY8';
+
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Falls back to hardcoded list until squad is populated via admin
+let PLAYERS = ['Billy', 'Blake', 'Cooper', 'Ethan', 'Freddie', 'Harry', 'Hayes', 'LJ', 'Louis', 'Mason', 'Wilson'];
+
+let fixtures = [];
+let results = {};
+let goalScorers = {};
+let squad = [];
+
+let statsSortColumn = 'goals';
+let statsSortDir = 'desc';
+
+async function sbFetch(path, options = {}) {
+  const { data: sessionData } = await supabaseClient.auth.getSession();
+  const token = sessionData.session ? sessionData.session.access_token : SUPABASE_KEY;
+  const url = SUPABASE_URL + '/rest/v1/' + path;
+  const headers = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + token,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation',
+    ...options.headers
+  };
+  const res = await fetch(url, { ...options, headers });
+  if (!res.ok) { const err = await res.text(); throw new Error(err); }
+  const text = await res.text();
+  return text ? JSON.parse(text) : [];
+}
+
+async function loadAndRender() {
+  await loadFixtures();
+  await loadResults();
+  await loadSquad();
+  renderFixtures();
+  renderResults();
+  renderPlayerStats();
+  renderSquad();
+  populateMatchSelect();
+  populateEditFixtureSelect();
+}
+
+async function init() {
+  try { await loadAndRender(); }
+  catch(e) { showToast('Failed to load data: ' + e.message, true); }
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────
+async function checkAdminSession() {
+  const { data } = await supabaseClient.auth.getSession();
+  const lock = document.getElementById('adminLock');
+  const content = document.getElementById('adminContent');
+  if (data.session) {
+    lock.style.display = 'none';
+    content.style.display = 'block';
+    await renderAdminContent(data.session.user.email);
+  } else {
+    lock.style.display = 'block';
+    content.style.display = 'none';
+    content.innerHTML = '';
+  }
+}
+
+async function signInAdmin() {
+  const email = document.getElementById('adminEmail').value.trim();
+  const password = document.getElementById('adminPassword').value;
+  if (!email || !password) { showToast('Enter email and password', true); return; }
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (error) { showToast('Sign in failed: ' + error.message, true); return; }
+  document.getElementById('adminPassword').value = '';
+  await checkAdminSession();
+}
+
+async function signOutAdmin() {
+  await supabaseClient.auth.signOut();
+  await checkAdminSession();
+}
+
+supabaseClient.auth.onAuthStateChange(() => {
+  if (document.getElementById('tab-admin').classList.contains('active')) checkAdminSession();
+});
+
+async function renderAdminContent(email) {
+  const container = document.getElementById('adminContent');
+  container.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0 4px;">
+      <button onclick="switchTab('fixtures')" style="background:none;border:none;cursor:pointer;font-size:13px;font-weight:600;color:var(--primary);font-family:'Inter',sans-serif;padding:0;">← Back to app</button>
+      <div style="font-size:12px;color:var(--grey-400);">${email}</div>
+      <button onclick="signOutAdmin()" style="background:none;border:none;cursor:pointer;font-size:13px;font-weight:600;color:var(--grey-400);font-family:'Inter',sans-serif;padding:0;">Sign out</button>
+    </div>
+
+    <div class="section">
+      <button onclick="toggleSquadAdmin()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:0;width:100%;text-align:left;">
+        <h3 style="margin:0;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;color:var(--primary);">Squad</h3>
+        <span id="squadAdminArrow" style="font-size:11px;color:var(--grey-400);margin-left:auto;">▼ expand</span>
+      </button>
+      <div id="squadAdminBody" style="display:none;margin-top:16px;">
+        <div id="squadAdminList"><div class="loading-overlay">Loading squad…</div></div>
+        <div class="form-group" style="margin-top:16px;">
+          <label>Name</label>
+          <input type="text" id="squadName" placeholder="e.g., Alfie">
+        </div>
+        <div class="form-group">
+          <label>Shirt Number</label>
+          <input type="number" id="squadNumber" min="1" placeholder="e.g., 7">
+        </div>
+        <button class="btn" onclick="addSquadPlayer()">Add Player</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Add Fixture</h3>
+      <div class="form-group"><label>Opponent</label><input type="text" id="fixtureOpponent" placeholder="e.g., Village Vipers"></div>
+      <div class="form-group"><label>Date</label><input type="date" id="fixtureDate"></div>
+      <div class="form-group"><label>Meet Time (optional)</label><input type="time" id="fixtureMeetTime"></div>
+      <div class="form-group"><label>Kick-off Time</label><input type="time" id="fixtureTime"></div>
+      <div class="form-group">
+        <label>Home or Away?</label>
+        <select id="fixtureHomeAway"><option value="Home">Home</option><option value="Away">Away</option></select>
+      </div>
+      <div class="form-group"><label>Location (optional)</label><input type="text" id="fixtureLocation" placeholder="e.g., East Lodge Park"></div>
+      <div class="form-group"><label>Comments (optional)</label><textarea id="fixtureComments" rows="3" placeholder="e.g., Parking at the main entrance, astro pitch"></textarea></div>
+      <button class="btn" onclick="addFixture()">Add Fixture</button>
+    </div>
+
+    <div class="section">
+      <h3>Edit Fixture</h3>
+      <div class="form-group">
+        <label>Select Fixture</label>
+        <select id="editFixtureSelect" onchange="loadFixtureForEdit()"><option value="">-- Select a fixture --</option></select>
+      </div>
+      <div id="editFixtureForm" style="display:none;">
+        <div class="form-group"><label>Opponent</label><input type="text" id="editFixtureOpponent"></div>
+        <div class="form-group"><label>Date</label><input type="date" id="editFixtureDate"></div>
+        <div class="form-group"><label>Meet Time (optional)</label><input type="time" id="editFixtureMeetTime"></div>
+        <div class="form-group"><label>Kick-off Time</label><input type="time" id="editFixtureTime"></div>
+        <div class="form-group">
+          <label>Home or Away?</label>
+          <select id="editFixtureHomeAway"><option value="Home">Home</option><option value="Away">Away</option></select>
+        </div>
+        <div class="form-group"><label>Location (optional)</label><input type="text" id="editFixtureLocation"></div>
+        <div class="form-group"><label>Comments (optional)</label><textarea id="editFixtureComments" rows="3"></textarea></div>
+        <button class="btn" onclick="saveFixtureEdit()">Save Changes</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Enter Match Result</h3>
+      <div class="form-group">
+        <label>Select Match</label>
+        <select id="matchSelect" onchange="loadMatchForResult()"><option value="">-- Select a match --</option></select>
+      </div>
+      <div id="resultForm" style="display:none;">
+        <div class="form-group"><label>Hurricanes Goals</label><input type="number" id="hurricanesGoals" min="0" placeholder="0"></div>
+        <div class="form-group"><label>Opponent Goals</label><input type="number" id="opponentGoals" min="0" placeholder="0"></div>
+        <div class="form-group">
+          <label>Player of the Match</label>
+          <select id="potmSelect">
+            <option value="">-- None --</option>
+            ${PLAYERS.map(p => '<option>' + p + '</option>').join('')}
+          </select>
+        </div>
+        <h3 style="margin-top:20px;margin-bottom:12px;">Goal Scorers</h3>
+        <div id="goalScorersList"></div>
+        <button class="btn" style="margin-top:12px;" onclick="addGoalScorerInput()">+ Add Goal Scorer</button>
+        <button class="btn btn-secondary" style="margin-top:12px;margin-left:8px;" onclick="saveResult()">Save Result</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>Export Season Data</h3>
+      <p style="font-size:13px;color:var(--grey-600);margin-bottom:14px;">Downloads a complete snapshot of all fixtures, results, goals, and squad as a JSON file. Keep a copy at the end of the season.</p>
+      <button class="btn" onclick="exportSeasonData()">⬇ Download Season Backup</button>
+    </div>
+  `;
+  populateMatchSelect();
+  populateEditFixtureSelect();
+}
+
+// ── Data loading ──────────────────────────────────────────────────────────
+async function loadFixtures() {
+  fixtures = await sbFetch('fixtures?select=*&order=kickoff_time');
+}
+
+async function loadResults() {
+  const data = await sbFetch('match_results?select=*');
+  results = {};
+  data.forEach(r => {
+    results[r.fixture_id] = {
+      hurricanes: r.hurricanes_goals,
+      opponent: r.opponent_goals,
+      potm: r.player_of_match
+    };
+  });
+  const goalData = await sbFetch('goal_scorers?select=*');
+  goalScorers = {};
+  goalData.forEach(g => {
+    if (!goalScorers[g.fixture_id]) goalScorers[g.fixture_id] = [];
+    goalScorers[g.fixture_id].push({ player: g.player_name, goals: g.goals });
+  });
+}
+
+async function loadSquad() {
+  try {
+    squad = await sbFetch('hurricanes_squad?select=*&order=shirt_number');
+    if (squad.length > 0) PLAYERS = squad.map(p => p.name);
+  } catch(e) {
+    // Table may not exist yet — fail silently and keep hardcoded PLAYERS
+    squad = [];
+  }
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────
+function switchTab(name) {
+  ['fixtures','results','scorers','squad'].forEach(id => {
+    const el = document.getElementById('nav-' + id);
+    if (el) el.classList.toggle('active', id === name);
+  });
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'admin') checkAdminSession();
+}
+
+function formatDate(dateStr) {
+  const date = new Date(dateStr + 'T00:00:00');
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return date.getDate() + ' ' + months[date.getMonth()] + ' ' + date.getFullYear();
+}
+
+function timeInputValue(isoString) {
+  if (!isoString) return '';
+  const d = new Date(isoString);
+  return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+
+function mapLink(location) {
+  return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(location);
+}
+
+function buildNotesLine(comments, light) {
+  if (!comments) return '';
+  return '<div class="match-notes' + (light ? ' light' : '') + '"><span style="font-style:normal;font-weight:600;">Details:</span> ' + comments + '</div>';
+}
+
+// ── Match card builder ────────────────────────────────────────────────────
+function buildMatchCard(f) {
+  const now = new Date();
+  const res = results[f.id];
+  const kickoff = new Date(f.kickoff_time);
+  const isPlayed = res !== undefined;
+  const isFuture = kickoff > now;
+
+  let result = '';
+  if (isPlayed) {
+    if (res.hurricanes > res.opponent) result = 'W';
+    else if (res.hurricanes === res.opponent) result = 'D';
+    else result = 'L';
+  }
+
+  let scoreHtml = '';
+  if (isPlayed) {
+    scoreHtml = '<div class="score-display result">' + res.hurricanes + ' - ' + res.opponent + '</div>';
+  } else if (isFuture) {
+    const diff = kickoff - now;
+    const days = Math.floor(diff / (1000*60*60*24));
+    const hours = Math.floor((diff % (1000*60*60*24)) / (1000*60*60));
+    scoreHtml = '<div class="fixture-status">In ' + (days > 0 ? days + 'd ' : '') + hours + 'h</div>';
+  } else {
+    scoreHtml = '<div class="fixture-status">vs</div>';
+  }
+
+  let scorersLine = '';
+  if (isPlayed && goalScorers[f.id] && goalScorers[f.id].length > 0) {
+    const txt = goalScorers[f.id].map(s => s.player + ' ' + s.goals).join(', ');
+    scorersLine = '<div class="match-scorers" style="grid-column:1/-1;">⚽ ' + txt + '</div>';
+  }
+
+  let potmLine = '';
+  if (isPlayed && res.potm) {
+    potmLine = '<div class="match-potm" style="grid-column:1/-1;">🌟 Player of the Match: ' + res.potm + '</div>';
+  }
+
+  let timesLine = '';
+  if (!isPlayed) {
+    const koStr = kickoff.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    if (f.meet_time) {
+      const meetStr = new Date(f.meet_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      timesLine = '<div class="match-scorers" style="grid-column:1/-1;font-size:12px;color:var(--grey-600);">🕐 Meet ' + meetStr + ' · KO ' + koStr + '</div>';
+    } else {
+      timesLine = '<div class="match-scorers" style="grid-column:1/-1;font-size:12px;color:var(--grey-600);">⚽ KO ' + koStr + '</div>';
+    }
+  }
+
+  let locationLine = '';
+  if (f.location) {
+    locationLine = '<div class="match-scorers" style="grid-column:1/-1;"><a href="' + mapLink(f.location) + '" target="_blank" rel="noopener" style="color:var(--primary);">📍 ' + f.location + '</a></div>';
+  }
+
+  return '<div class="match-card">' +
+    '<div class="match-team home">Hurricanes<div class="match-meta">' + formatDate(f.date) + '</div></div>' +
+    scoreHtml +
+    '<div class="match-team away">' + f.opponent + '<div class="match-meta">' + (result ? result : f.home_away) + '</div></div>' +
+    timesLine + locationLine +
+    (!isPlayed ? buildNotesLine(f.comments, true) : '') +
+    scorersLine + potmLine +
+    '</div>';
+}
+
+// ── Fixtures tab ──────────────────────────────────────────────────────────
+function renderFixtures() {
+  const container = document.getElementById('fixturesContent');
+  if (fixtures.length === 0) { container.innerHTML = '<div class="empty-state">No fixtures added yet</div>'; return; }
+  const now = new Date();
+
+  let nextMatch = null;
+  fixtures.forEach(f => {
+    const kickoff = new Date(f.kickoff_time);
+    if (results[f.id] === undefined && kickoff > now && (!nextMatch || kickoff < new Date(nextMatch.kickoff_time))) {
+      nextMatch = f;
+    }
+  });
+
+  const upcoming = fixtures.filter(f => results[f.id] === undefined && (!nextMatch || f.id !== nextMatch.id));
+  let html = '';
+
+  if (nextMatch) {
+    const kickoff = new Date(nextMatch.kickoff_time);
+    const koStr = kickoff.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    const timesDisplay = nextMatch.meet_time
+      ? 'Meet ' + new Date(nextMatch.meet_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + ' · KO ' + koStr
+      : 'KO ' + koStr;
+    const locationLine = nextMatch.location
+      ? '<div class="next-match-detail"><a href="' + mapLink(nextMatch.location) + '" target="_blank" rel="noopener" style="color:rgba(255,255,255,0.8);">📍 ' + nextMatch.location + '</a></div>'
+      : '';
+    html += '<div class="next-match-card">' +
+      '<div class="next-match-label">NEXT MATCH</div>' +
+      '<div class="next-match-teams">Hurricanes vs ' + nextMatch.opponent + '</div>' +
+      '<div class="next-match-detail">' + formatDate(nextMatch.date) + ' · ' + nextMatch.home_away + '</div>' +
+      locationLine + buildNotesLine(nextMatch.comments) +
+      '<div class="next-match-times">' + timesDisplay + '</div>' +
+      '</div>';
+  } else if (upcoming.length === 0 && fixtures.length > 0) {
+    html += '<div class="next-match-card"><div class="next-match-label">SEASON COMPLETE</div><div class="next-match-teams">All fixtures played</div></div>';
+  }
+
+  upcoming.forEach(f => { html += buildMatchCard(f); });
+  container.innerHTML = html;
+}
+
+// ── Results tab ───────────────────────────────────────────────────────────
+function renderResults() {
+  const container = document.getElementById('resultsContent');
+  const playedFixtures = fixtures.filter(f => results[f.id] !== undefined);
+  if (playedFixtures.length === 0) { container.innerHTML = '<div class="empty-state">No matches played yet</div>'; return; }
+
+  let s = { played: 0, wins: 0, draws: 0, losses: 0, goalsFor: 0, goalsAgainst: 0 };
+  playedFixtures.forEach(f => {
+    const res = results[f.id];
+    s.played++; s.goalsFor += res.hurricanes; s.goalsAgainst += res.opponent;
+    if (res.hurricanes > res.opponent) s.wins++;
+    else if (res.hurricanes === res.opponent) s.draws++;
+    else s.losses++;
+  });
+
+  const goalDiff = s.goalsFor - s.goalsAgainst;
+  const points = (s.wins * 3) + s.draws;
+  const recentForm = playedFixtures.slice(-10);
+  let formHtml = '';
+  recentForm.forEach(f => {
+    const res = results[f.id];
+    if (res.hurricanes > res.opponent) formHtml += '<span class="w">W</span> ';
+    else if (res.hurricanes === res.opponent) formHtml += '<span class="d">D</span> ';
+    else formHtml += '<span class="l">L</span> ';
+  });
+
+  let html = '<div class="section"><h3>Our Record</h3>' +
+    '<table class="table">' +
+    '<tr><th>Played</th><th>Wins</th><th>Draws</th><th>Losses</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr>' +
+    '<tr><td>' + s.played + '</td><td>' + s.wins + '</td><td>' + s.draws + '</td><td>' + s.losses + '</td><td>' + s.goalsFor + '</td><td>' + s.goalsAgainst + '</td><td>' + goalDiff + '</td><td style="font-weight:700;color:var(--primary);font-size:16px;">' + points + '</td></tr>' +
+    '</table>' +
+    (formHtml ? '<div style="margin-top:20px;"><div style="font-size:12px;font-weight:600;color:var(--grey-600);margin-bottom:6px;">FORM (LAST ' + recentForm.length + ')</div><div class="form-string">' + formHtml.trim() + '</div></div>' : '') +
+    '</div>';
+
+  [...playedFixtures].reverse().forEach(f => { html += buildMatchCard(f); });
+  container.innerHTML = html;
+}
+
+// ── Player Stats tab ──────────────────────────────────────────────────────
+function setStatsSort(column) {
+  if (statsSortColumn === column) {
+    statsSortDir = statsSortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    statsSortColumn = column;
+    statsSortDir = column === 'name' ? 'asc' : 'desc';
+  }
+  renderPlayerStats();
+}
+
+function sortArrow(column) {
+  if (statsSortColumn !== column) return '';
+  return '<span class="sort-arrow">' + (statsSortDir === 'asc' ? '▲' : '▼') + '</span>';
+}
+
+function renderPlayerStats() {
+  const container = document.getElementById('scorersContent');
+  const playedFixtures = fixtures.filter(f => results[f.id] !== undefined);
+
+  // If squad table not set up yet, fall back to goal scorer leaderboard
+  if (squad.length === 0) {
+    const scorersMap = {};
+    Object.values(goalScorers).forEach(matchGoals => {
+      matchGoals.forEach(g => {
+        if (!scorersMap[g.player]) scorersMap[g.player] = 0;
+        scorersMap[g.player] += g.goals;
+      });
+    });
+    const sorted = Object.entries(scorersMap).sort((a,b) => b[1] - a[1]);
+    if (sorted.length === 0) { container.innerHTML = '<div class="empty-state">No goals recorded yet</div>'; return; }
+    let html = '';
+    sorted.forEach((entry, i) => {
+      html += '<div class="leaderboard-item">' +
+        '<div class="leaderboard-rank">' + (i+1) + '</div>' +
+        '<div class="leaderboard-name">' + entry[0] + '</div>' +
+        '<div class="leaderboard-goals">' + entry[1] + '</div>' +
+        '</div>';
+    });
+    container.innerHTML = html;
+    return;
+  }
+
+  const stats = squad.map(p => {
+    let goals = 0, potm = 0;
+    playedFixtures.forEach(f => {
+      const res = results[f.id];
+      if (res.potm === p.name) potm++;
+      (goalScorers[f.id] || []).forEach(s => { if (s.player === p.name) goals += s.goals; });
+    });
+    return { name: p.name, goals, potm };
+  });
+
+  stats.sort((a, b) => {
+    const cmp = statsSortColumn === 'name' ? a.name.localeCompare(b.name) : a[statsSortColumn] - b[statsSortColumn];
+    return statsSortDir === 'asc' ? cmp : -cmp;
+  });
+
+  let html = '<div class="section"><h3>Player Stats</h3>' +
+    '<table class="table"><tr>' +
+    '<th class="sortable" onclick="setStatsSort(\'name\')">Player' + sortArrow('name') + '</th>' +
+    '<th class="sortable" onclick="setStatsSort(\'goals\')">Goals' + sortArrow('goals') + '</th>' +
+    '<th class="sortable" onclick="setStatsSort(\'potm\')">POTM' + sortArrow('potm') + '</th>' +
+    '</tr>';
+  stats.forEach(s => {
+    html += '<tr><td>' + s.name + '</td><td>' + s.goals + '</td><td>' + s.potm + '</td></tr>';
+  });
+  html += '</table><div style="font-size:11px;color:var(--grey-400);margin-top:10px;">Goals = total goals scored · POTM = Player of the Match awards · tap a column to sort</div></div>';
+  container.innerHTML = html;
+}
+
+// ── Squad tab ─────────────────────────────────────────────────────────────
+function renderSquad() {
+  const container = document.getElementById('squadContent');
+  if (squad.length === 0) { container.innerHTML = '<div class="empty-state">Squad list coming soon</div>'; return; }
+  let html = '';
+  squad.forEach(p => {
+    html += '<div class="leaderboard-item">' +
+      '<div class="leaderboard-rank">' + (p.shirt_number != null ? p.shirt_number : '-') + '</div>' +
+      '<div class="leaderboard-name">' + p.name + '</div>' +
+      '</div>';
+  });
+  container.innerHTML = html;
+}
+
+// ── Admin: squad ──────────────────────────────────────────────────────────
+let squadAdmin = [];
+
+async function toggleSquadAdmin() {
+  const body = document.getElementById('squadAdminBody');
+  const arrow = document.getElementById('squadAdminArrow');
+  if (!body) return;
+  const open = body.style.display === 'none';
+  body.style.display = open ? 'block' : 'none';
+  if (arrow) arrow.textContent = open ? '▲ collapse' : '▼ expand';
+  if (open) { await loadSquadAdmin(); renderSquadAdminList(); }
+}
+
+async function loadSquadAdmin() {
+  squadAdmin = await sbFetch('hurricanes_squad?select=*&order=shirt_number');
+}
+
+function renderSquadAdminList() {
+  const container = document.getElementById('squadAdminList');
+  if (!container) return;
+  if (squadAdmin.length === 0) { container.innerHTML = '<div class="empty-state">No players added yet</div>'; return; }
+  let html = '<table class="table"><tr><th>#</th><th>Name</th><th></th></tr>';
+  squadAdmin.forEach(p => {
+    html += '<tr>' +
+      '<td>' + (p.shirt_number != null ? p.shirt_number : '-') + '</td>' +
+      '<td>' + p.name + '</td>' +
+      '<td><button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="deleteSquadPlayer(' + p.id + ')">Remove</button></td>' +
+      '</tr>';
+  });
+  html += '</table>';
+  container.innerHTML = html;
+}
+
+async function addSquadPlayer() {
+  const name = document.getElementById('squadName').value.trim();
+  const numberVal = document.getElementById('squadNumber').value;
+  const shirtNumber = numberVal ? parseInt(numberVal) : null;
+  if (!name) { showToast('Enter a name', true); return; }
+  try {
+    await sbFetch('hurricanes_squad', { method: 'POST', body: JSON.stringify([{ name, shirt_number: shirtNumber }]) });
+    document.getElementById('squadName').value = '';
+    document.getElementById('squadNumber').value = '';
+    await loadSquadAdmin(); renderSquadAdminList();
+    await loadSquad(); renderSquad(); renderPlayerStats();
+    showToast('Player added!');
+  } catch(e) { showToast('Error: ' + e.message, true); }
+}
+
+async function deleteSquadPlayer(id) {
+  try {
+    await sbFetch('hurricanes_squad?id=eq.' + id, { method: 'DELETE' });
+    await loadSquadAdmin(); renderSquadAdminList();
+    await loadSquad(); renderSquad(); renderPlayerStats();
+    showToast('Player removed');
+  } catch(e) { showToast('Error: ' + e.message, true); }
+}
+
+// ── Admin: fixtures ───────────────────────────────────────────────────────
+function populateMatchSelect() {
+  const select = document.getElementById('matchSelect');
+  if (!select) return;
+  select.innerHTML = '<option value="">-- Select a match --</option>';
+  fixtures.forEach(f => {
+    const recorded = results[f.id] !== undefined ? ' ✓ recorded' : '';
+    select.innerHTML += '<option value="' + f.id + '">' + f.opponent + ' (' + f.date + ')' + recorded + '</option>';
+  });
+}
+
+function populateEditFixtureSelect() {
+  const select = document.getElementById('editFixtureSelect');
+  if (!select) return;
+  const current = select.value;
+  select.innerHTML = '<option value="">-- Select a fixture --</option>';
+  fixtures.forEach(f => { select.innerHTML += '<option value="' + f.id + '">' + f.opponent + ' (' + f.date + ')</option>'; });
+  select.value = current;
+}
+
+function loadFixtureForEdit() {
+  const fixtureId = parseInt(document.getElementById('editFixtureSelect').value);
+  const form = document.getElementById('editFixtureForm');
+  if (!fixtureId) { form.style.display = 'none'; return; }
+  const f = fixtures.find(fx => fx.id === fixtureId);
+  if (!f) { form.style.display = 'none'; return; }
+  form.style.display = 'block';
+  document.getElementById('editFixtureOpponent').value = f.opponent;
+  document.getElementById('editFixtureDate').value = f.date;
+  document.getElementById('editFixtureMeetTime').value = timeInputValue(f.meet_time);
+  document.getElementById('editFixtureTime').value = timeInputValue(f.kickoff_time);
+  document.getElementById('editFixtureHomeAway').value = f.home_away;
+  document.getElementById('editFixtureLocation').value = f.location || '';
+  document.getElementById('editFixtureComments').value = f.comments || '';
+}
+
+async function saveFixtureEdit() {
+  const fixtureId = parseInt(document.getElementById('editFixtureSelect').value);
+  const opponent = document.getElementById('editFixtureOpponent').value.trim();
+  const date = document.getElementById('editFixtureDate').value;
+  const meetTime = document.getElementById('editFixtureMeetTime').value;
+  const time = document.getElementById('editFixtureTime').value;
+  const homeAway = document.getElementById('editFixtureHomeAway').value;
+  const location = document.getElementById('editFixtureLocation').value.trim() || null;
+  const comments = document.getElementById('editFixtureComments').value.trim() || null;
+  if (!fixtureId || !opponent || !date || !time) { showToast('Fill in all fields', true); return; }
+  const kickoff = new Date(date + 'T' + time).toISOString();
+  const meet = meetTime ? new Date(date + 'T' + meetTime).toISOString() : null;
+  try {
+    await sbFetch('fixtures?id=eq.' + fixtureId, {
+      method: 'PATCH',
+      body: JSON.stringify({ opponent, date, kickoff_time: kickoff, meet_time: meet, home_away: homeAway, location, comments })
+    });
+    await loadFixtures(); renderFixtures(); renderResults();
+    populateMatchSelect(); populateEditFixtureSelect();
+    document.getElementById('editFixtureForm').style.display = 'none';
+    document.getElementById('editFixtureSelect').value = '';
+    showToast('Fixture updated!');
+  } catch(e) { showToast('Error: ' + e.message, true); }
+}
+
+async function addFixture() {
+  const opponent = document.getElementById('fixtureOpponent').value.trim();
+  const date = document.getElementById('fixtureDate').value;
+  const meetTime = document.getElementById('fixtureMeetTime').value;
+  const time = document.getElementById('fixtureTime').value;
+  const homeAway = document.getElementById('fixtureHomeAway').value;
+  const location = document.getElementById('fixtureLocation').value.trim() || null;
+  const comments = document.getElementById('fixtureComments').value.trim() || null;
+  if (!opponent || !date || !time) { showToast('Fill in all fields', true); return; }
+  const kickoff = new Date(date + 'T' + time).toISOString();
+  const meet = meetTime ? new Date(date + 'T' + meetTime).toISOString() : null;
+  try {
+    await sbFetch('fixtures', {
+      method: 'POST',
+      body: JSON.stringify([{ opponent, date, kickoff_time: kickoff, meet_time: meet, home_away: homeAway, location, comments }])
+    });
+    ['fixtureOpponent','fixtureDate','fixtureMeetTime','fixtureTime','fixtureLocation','fixtureComments'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    await loadFixtures(); renderFixtures(); populateMatchSelect(); populateEditFixtureSelect();
+    showToast('Fixture added!');
+  } catch(e) { showToast('Error: ' + e.message, true); }
+}
+
+// ── Admin: results ────────────────────────────────────────────────────────
+function loadMatchForResult() {
+  const matchId = parseInt(document.getElementById('matchSelect').value);
+  const form = document.getElementById('resultForm');
+  if (!matchId) { form.style.display = 'none'; return; }
+  form.style.display = 'block';
+  const res = results[matchId] || {};
+  document.getElementById('hurricanesGoals').value = res.hurricanes || '';
+  document.getElementById('opponentGoals').value = res.opponent || '';
+  document.getElementById('potmSelect').value = res.potm || '';
+  const scorers = goalScorers[matchId] || [];
+  const list = document.getElementById('goalScorersList');
+  list.innerHTML = '';
+  scorers.forEach(s => {
+    list.innerHTML += '<div class="goal-inputs">' +
+      '<select><option selected>' + s.player + '</option>' + PLAYERS.map(p => '<option>' + p + '</option>').join('') + '</select>' +
+      '<input type="number" value="' + s.goals + '" min="0">' +
+      '<button class="btn" style="padding:6px 12px;" onclick="this.parentElement.remove()">Remove</button>' +
+      '</div>';
+  });
+}
+
+function addGoalScorerInput() {
+  const list = document.getElementById('goalScorersList');
+  list.innerHTML += '<div class="goal-inputs">' +
+    '<select><option value="">-- Select player --</option>' + PLAYERS.map(p => '<option>' + p + '</option>').join('') + '</select>' +
+    '<input type="number" value="1" min="0">' +
+    '<button class="btn" style="padding:6px 12px;" onclick="this.parentElement.remove()">Remove</button>' +
+    '</div>';
+}
+
+async function saveResult() {
+  const matchId = parseInt(document.getElementById('matchSelect').value);
+  const hurricanesGoals = parseInt(document.getElementById('hurricanesGoals').value) || 0;
+  const opponentGoals = parseInt(document.getElementById('opponentGoals').value) || 0;
+  const potm = document.getElementById('potmSelect').value || null;
+  const scorerInputs = document.querySelectorAll('#goalScorersList .goal-inputs');
+  const scorers = [];
+  scorerInputs.forEach(inp => {
+    const player = inp.querySelector('select').value;
+    const goals = parseInt(inp.querySelector('input').value) || 0;
+    if (player && goals > 0) scorers.push({ fixture_id: matchId, player_name: player, goals });
+  });
+  try {
+    await sbFetch('match_results?fixture_id=eq.' + matchId, { method: 'DELETE' });
+    await sbFetch('goal_scorers?fixture_id=eq.' + matchId, { method: 'DELETE' });
+    await sbFetch('match_results', {
+      method: 'POST',
+      body: JSON.stringify([{ fixture_id: matchId, hurricanes_goals: hurricanesGoals, opponent_goals: opponentGoals, player_of_match: potm }])
+    });
+    if (scorers.length > 0) {
+      await sbFetch('goal_scorers', { method: 'POST', body: JSON.stringify(scorers) });
+    }
+    await loadResults(); renderFixtures(); renderResults(); renderPlayerStats();
+    document.getElementById('resultForm').style.display = 'none';
+    document.getElementById('matchSelect').value = '';
+    showToast('Result saved!');
+  } catch(e) { showToast('Error: ' + e.message, true); }
+}
+
+// ── Export ────────────────────────────────────────────────────────────────
+async function exportSeasonData() {
+  showToast('Preparing export…');
+  try {
+    const [rawFixtures, rawResults, rawGoalScorers, rawSquad] = await Promise.all([
+      sbFetch('fixtures?select=*&order=kickoff_time'),
+      sbFetch('match_results?select=*'),
+      sbFetch('goal_scorers?select=*'),
+      sbFetch('hurricanes_squad?select=*&order=shirt_number').catch(() => []),
+    ]);
+    const exportDate = new Date().toISOString().slice(0,10);
+    const payload = {
+      exported_at: new Date().toISOString(),
+      team: 'East Lodge Hurricanes',
+      fixtures: rawFixtures,
+      results: rawResults,
+      goal_scorers: rawGoalScorers,
+      squad: rawSquad,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'EastLodgeHurricanes_' + exportDate + '.json'; a.click();
+    URL.revokeObjectURL(url);
+    showToast('Download started!');
+  } catch(e) { showToast('Export failed: ' + e.message, true); }
+}
+
+// ── Pull-to-refresh ───────────────────────────────────────────────────────
+(function() {
+  const THRESHOLD = 72, MAX_PULL = 100;
+  let startY = 0, pulling = false;
+  const indicator = document.getElementById('pullIndicator');
+  document.addEventListener('touchstart', e => {
+    if (window.scrollY === 0) { startY = e.touches[0].clientY; pulling = true; }
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!pulling) return;
+    const dist = Math.min(e.touches[0].clientY - startY, MAX_PULL);
+    if (dist <= 0) { pulling = false; return; }
+    indicator.style.height = Math.min(dist, MAX_PULL) + 'px';
+    indicator.textContent = dist >= THRESHOLD ? '↻ Release to refresh' : '↓ Pull to refresh';
+  }, { passive: true });
+  document.addEventListener('touchend', async () => {
+    if (!pulling) return;
+    pulling = false;
+    const triggered = parseInt(indicator.style.height || '0') >= THRESHOLD;
+    indicator.style.height = '0';
+    if (triggered) {
+      try { await loadAndRender(); showToast('Updated!'); }
+      catch(e) { showToast('Refresh failed', true); }
+    }
+  });
+})();
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') loadAndRender().catch(() => {});
+});
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) loadAndRender().catch(() => {});
+});
+
+let toastTimer;
+function showToast(msg, error = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (error ? ' error' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = 'toast'; }, 3000);
+}
+
+init();
+</script>
+</body>
+</html>
