@@ -843,17 +843,28 @@ function renderPlayerStats() {
     return;
   }
 
+  const GK_NAME = 'Billy';
+
   const stats = squad.map(p => {
-    let goals = 0, potm = 0;
+    let goals = 0, potm = 0, cleanSheets = 0;
+    const isGK = p.name === GK_NAME;
     playedFixtures.forEach(f => {
       const res = results[f.id];
       if (res.potm === p.name) potm++;
+      if (isGK && res.opponent === 0) cleanSheets++;
       (goalScorers[f.id] || []).forEach(s => { if (s.player === p.name) goals += s.goals; });
     });
-    return { name: p.name, goals, potm };
+    return { name: p.name, goals, potm, cleanSheets, isGK };
   });
 
   stats.sort((a, b) => {
+    if (statsSortColumn === 'cleanSheets') {
+      if (!a.isGK && !b.isGK) return 0;
+      if (!a.isGK) return 1;
+      if (!b.isGK) return -1;
+      const cmp = a.cleanSheets - b.cleanSheets;
+      return statsSortDir === 'asc' ? cmp : -cmp;
+    }
     const cmp = statsSortColumn === 'name' ? a.name.localeCompare(b.name) : a[statsSortColumn] - b[statsSortColumn];
     return statsSortDir === 'asc' ? cmp : -cmp;
   });
@@ -861,13 +872,15 @@ function renderPlayerStats() {
   let html = '<div class="section"><h3>Player Stats</h3>' +
     '<table class="table"><tr>' +
     '<th class="sortable" onclick="setStatsSort(\'name\')">Player' + sortArrow('name') + '</th>' +
-    '<th class="sortable" onclick="setStatsSort(\'goals\')">Goals' + sortArrow('goals') + '</th>' +
+    '<th class="sortable" onclick="setStatsSort(\'goals\')">#' + sortArrow('goals') + '</th>' +
+    '<th class="sortable" onclick="setStatsSort(\'cleanSheets\')">CS' + sortArrow('cleanSheets') + '</th>' +
     '<th class="sortable" onclick="setStatsSort(\'potm\')">POTM' + sortArrow('potm') + '</th>' +
     '</tr>';
   stats.forEach(s => {
-    html += '<tr><td>' + s.name + '</td><td>' + s.goals + '</td><td>' + s.potm + '</td></tr>';
+    const csDisplay = s.isGK ? s.cleanSheets : '<span style="color:var(--grey-400);">—</span>';
+    html += '<tr><td>' + s.name + '</td><td>' + s.goals + '</td><td>' + csDisplay + '</td><td>' + s.potm + '</td></tr>';
   });
-  html += '</table><div style="font-size:11px;color:var(--grey-400);margin-top:10px;">Goals = total goals scored · POTM = Player of the Match awards · tap a column to sort</div></div>';
+  html += '</table><div style="font-size:11px;color:var(--grey-400);margin-top:10px;"># = goals scored · CS = clean sheets (goalkeeper only) · POTM = Player of the Match · tap a column to sort</div></div>';
   container.innerHTML = html;
 }
 
