@@ -661,8 +661,8 @@ function formatDate(dateStr) {
 
 function timeInputValue(isoString) {
   if (!isoString) return '';
-  const d = new Date(isoString);
-  return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  // Slice HH:MM directly from the stored string to avoid timezone shifts
+  return isoString.slice(11, 16);
 }
 
 function mapLink(location) {
@@ -717,9 +717,9 @@ function buildMatchCard(f) {
 
   let timesLine = '';
   if (!isPlayed) {
-    const koStr = kickoff.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    const koStr = f.kickoff_time ? f.kickoff_time.slice(11, 16) : '';
     if (f.meet_time) {
-      const meetStr = new Date(f.meet_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      const meetStr = f.meet_time.slice(11, 16);
       timesLine = '<div class="match-scorers" style="grid-column:1/-1;font-size:12px;color:var(--grey-600);">🕐 Meet ' + meetStr + ' · KO ' + koStr + '</div>';
     } else {
       timesLine = '<div class="match-scorers" style="grid-column:1/-1;font-size:12px;color:var(--grey-600);">⚽ KO ' + koStr + '</div>';
@@ -759,10 +759,9 @@ function renderFixtures() {
   let html = '';
 
   if (nextMatch) {
-    const kickoff = new Date(nextMatch.kickoff_time);
-    const koStr = kickoff.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    const koStr = nextMatch.kickoff_time ? nextMatch.kickoff_time.slice(11, 16) : '';
     const timesDisplay = nextMatch.meet_time
-      ? 'Meet ' + new Date(nextMatch.meet_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + ' · KO ' + koStr
+      ? 'Meet ' + nextMatch.meet_time.slice(11, 16) + ' · KO ' + koStr
       : 'KO ' + koStr;
     const locationLine = nextMatch.location
       ? '<div class="next-match-detail"><a href="' + mapLink(nextMatch.location) + '" target="_blank" rel="noopener" style="color:rgba(255,255,255,0.8);">📍 ' + nextMatch.location + '</a></div>'
@@ -1021,8 +1020,8 @@ async function saveFixtureEdit() {
   const location = document.getElementById('editFixtureLocation').value.trim() || null;
   const comments = document.getElementById('editFixtureComments').value.trim() || null;
   if (!fixtureId || !opponent || !date || !time) { showToast('Fill in all fields', true); return; }
-  const kickoff = new Date(date + 'T' + time).toISOString();
-  const meet = meetTime ? new Date(date + 'T' + meetTime).toISOString() : null;
+  const kickoff = date + 'T' + time + ':00';
+  const meet = meetTime ? date + 'T' + meetTime + ':00' : null;
   try {
     await sbFetch('fixtures?id=eq.' + fixtureId, {
       method: 'PATCH',
@@ -1045,8 +1044,8 @@ async function addFixture() {
   const location = document.getElementById('fixtureLocation').value.trim() || null;
   const comments = document.getElementById('fixtureComments').value.trim() || null;
   if (!opponent || !date || !time) { showToast('Fill in all fields', true); return; }
-  const kickoff = new Date(date + 'T' + time).toISOString();
-  const meet = meetTime ? new Date(date + 'T' + meetTime).toISOString() : null;
+  const kickoff = date + 'T' + time + ':00';
+  const meet = meetTime ? date + 'T' + meetTime + ':00' : null;
   try {
     await sbFetch('fixtures', {
       method: 'POST',
