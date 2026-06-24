@@ -364,6 +364,10 @@
     <div style="background:var(--primary);color:rgba(255,255,255,0.85);border-radius:10px;padding:14px 16px;margin-bottom:20px;font-size:13px;line-height:1.5;border-left:4px solid var(--gold);">
       Results and player stats for the 26/27 BMR Hurricanes season. Fixtures and training are managed on Spond.
     </div>
+    <div id="installBanner" style="display:none;background:var(--gold);color:var(--primary-dark);border-radius:10px;padding:12px 16px;margin-bottom:20px;font-size:13px;line-height:1.5;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      <span>📲 Tap <strong>Share → Add to Home Screen</strong> for quick access</span>
+      <button onclick="document.getElementById('installBanner').style.display='none';sessionStorage.setItem('installDismissed','1');" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--primary-dark);flex-shrink:0;">✕</button>
+    </div>
     <div id="fixturesContent"><div class="loading-overlay">Loading fixtures…</div></div>
   </div>
 
@@ -564,7 +568,10 @@ async function renderAdminContent(email) {
         </div>
         <div class="form-group"><label>Location (optional)</label><input type="text" id="editFixtureLocation"></div>
         <div class="form-group"><label>Comments (optional)</label><textarea id="editFixtureComments" rows="3"></textarea></div>
-        <button class="btn" onclick="saveFixtureEdit()">Save Changes</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn" onclick="saveFixtureEdit()">Save Changes</button>
+          <button class="btn btn-danger" onclick="deleteFixture()">Delete Fixture</button>
+        </div>
       </div>
     </div>
 
@@ -910,8 +917,9 @@ function renderSquad() {
   if (squad.length === 0) { container.innerHTML = '<div class="empty-state">Squad list coming soon</div>'; return; }
   let html = '';
   squad.forEach(p => {
+    const position = p.name === 'Billy' ? '<span style="font-size:11px;color:var(--grey-400);margin-left:8px;">GK</span>' : '';
     html += '<div class="leaderboard-item">' +
-      '<div class="leaderboard-name">' + p.name + '</div>' +
+      '<div class="leaderboard-name">' + p.name + position + '</div>' +
       '</div>';
   });
   container.innerHTML = html;
@@ -1035,6 +1043,24 @@ async function saveFixtureEdit() {
   } catch(e) { showToast('Error: ' + e.message, true); }
 }
 
+async function deleteFixture() {
+  const fixtureId = parseInt(document.getElementById('editFixtureSelect').value);
+  if (!fixtureId) return;
+  const f = fixtures.find(fx => fx.id === fixtureId);
+  if (!confirm('Delete fixture vs ' + (f ? f.opponent : 'this opponent') + '? This cannot be undone.')) return;
+  try {
+    await sbFetch('match_results?fixture_id=eq.' + fixtureId, { method: 'DELETE' });
+    await sbFetch('goal_scorers?fixture_id=eq.' + fixtureId, { method: 'DELETE' });
+    await sbFetch('fixtures?id=eq.' + fixtureId, { method: 'DELETE' });
+    document.getElementById('editFixtureForm').style.display = 'none';
+    document.getElementById('editFixtureSelect').value = '';
+    await loadFixtures(); await loadResults();
+    renderFixtures(); renderResults(); renderPlayerStats();
+    populateMatchSelect(); populateEditFixtureSelect();
+    showToast('Fixture deleted');
+  } catch(e) { showToast('Error: ' + e.message, true); }
+}
+
 async function addFixture() {
   const opponent = document.getElementById('fixtureOpponent').value.trim();
   const date = document.getElementById('fixtureDate').value;
@@ -1104,6 +1130,12 @@ async function saveResult() {
     const goals = parseInt(inp.querySelector('input').value) || 0;
     if (player && goals > 0) scorers.push({ fixture_id: matchId, player_name: player, goals });
   });
+  const totalScorerGoals = scorers.reduce((sum, s) => sum + s.goals, 0);
+  if (totalScorerGoals > hurricanesGoals) {
+    showToast('Goal scorers (' + totalScorerGoals + ') exceed Hurricanes goals (' + hurricanesGoals + ')', true);
+    return;
+  }
+  if (!confirm('Save result? This will overwrite any existing result for this match.')) return;
   try {
     await sbFetch('match_results?fixture_id=eq.' + matchId, { method: 'DELETE' });
     await sbFetch('goal_scorers?fixture_id=eq.' + matchId, { method: 'DELETE' });
@@ -1193,6 +1225,26 @@ function showToast(msg, error = false) {
 }
 
 init();
+
+// Show install banner if not already installed or dismissed
+(function() {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isAndroid = /android/i.test(navigator.userAgent);
+  const isInstalled = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+  const dismissed = sessionStorage.getItem('installDismissed');
+  if ((isIOS || isAndroid) && !isInstalled && !dismissed) {
+    const banner = document.getElementById('installBanner');
+    if (banner) {
+      const msg = banner.querySelector('span');
+      if (isIOS) {
+        msg.innerHTML = '📲 Tap <strong>Share → Add to Home Screen</strong> for quick access';
+      } else {
+        msg.innerHTML = '📲 Tap <strong>Menu → Add to Home Screen</strong> for quick access';
+      }
+      banner.style.display = 'flex';
+    }
+  }
+})();
 </script>
 </body>
 </html>
