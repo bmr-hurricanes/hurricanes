@@ -4,17 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="East Lodge Hurricanes">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<title>East Lodge Hurricanes - Summer League Tracker</title>
+<meta name="apple-mobile-web-app-title" content="BMR Hurricanes">
+<link rel="apple-touch-icon" href="https://raw.githubusercontent.com/bmr-hurricanes/hurricanes/main/apple-touch-icon.png">
+<title>Baffins Milton Rovers Hurricanes - Summer League</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&display=swap');
   :root {
-    --primary: #0d0d0d;
-    --primary-dark: #000000;
-    --accent: #ffffff;
-    --gold: #e0e0e0;
-    --gold-dark: #b0b0b0;
+    --primary: #1a56c4;
+    --primary-dark: #1244a8;
+    --accent: #f0c030;
+    --gold: #f0c030;
+    --gold-dark: #c9a020;
     --white: #ffffff;
     --grey-50: #f9fafb;
     --grey-100: #f3f4f6;
@@ -56,7 +56,7 @@
     top: 0;
     z-index: 90;
     overflow: hidden;
-    border-bottom: 3px solid rgba(255,255,255,0.3);
+    border-bottom: 3px solid var(--gold);
   }
   header::before {
     content: '';
@@ -68,8 +68,8 @@
   }
   header div { position: relative; z-index: 1; }
   .header-badge {
-    background: var(--white);
-    color: var(--primary);
+    background: var(--gold);
+    color: var(--primary-dark);
     font-family: 'Bebas Neue', sans-serif;
     font-size: 13px;
     letter-spacing: 1px;
@@ -82,9 +82,9 @@
   }
   header h1 {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 28px;
+    font-size: clamp(18px, 4vw, 28px);
     letter-spacing: 2px;
-    line-height: 1;
+    line-height: 1.1;
   }
   header .header-meta {
     font-size: 13px;
@@ -187,7 +187,7 @@
     box-shadow: 0 4px 16px rgba(0,0,0,0.25);
     text-align: center;
     color: var(--white);
-    border-bottom: 3px solid rgba(255,255,255,0.25);
+    border-bottom: 3px solid var(--gold);
   }
   .next-match-label {
     font-family: 'Bebas Neue', sans-serif;
@@ -208,7 +208,7 @@
     display: block;
     width: 50px;
     height: 3px;
-    background: rgba(255,255,255,0.3);
+    background: var(--gold);
     border-radius: 2px;
     margin: 8px auto 0;
   }
@@ -335,8 +335,7 @@
   }
 
   @media (max-width: 600px) {
-    header h1 { font-size: 24px; }
-    header { padding: 24px 18px; }
+    header { padding: 16px 14px; }
     .match-card { grid-template-columns: 1fr auto 1fr; }
     .table { font-size: 12px; }
   }
@@ -345,16 +344,26 @@
 <body>
 
 <header>
-  <div>
-    <h1>East Lodge Hurricanes</h1>
-    <div class="header-badge">INTER CITY SUMMER LEAGUE</div>
-    <div class="header-meta">Coaches: Sam Game &amp; Chad Clarke</div>
+  <div style="display:flex;align-items:center;gap:14px;position:relative;z-index:1;">
+    <img src="https://raw.githubusercontent.com/bmr-hurricanes/hurricanes/main/apple-touch-icon.png" alt="BMR crest" style="width:72px;height:72px;border-radius:50%;border:2px solid var(--gold);flex-shrink:0;object-fit:cover;">
+    <div>
+      <h1>Baffins Milton Rovers Hurricanes</h1>
+      <div class="header-meta">Coaches: Sam Game &amp; Chad Clarke</div>
+      <div class="header-meta" style="margin-top:2px;">Sponsors: <a href="https://jwmconstructionconsultants.co.uk/" target="_blank" rel="noopener" style="color:rgba(255,255,255,0.55);text-decoration:underline;">JWM Consultants</a></div>
+      <div class="header-meta">Hampshire Plumbing &amp; Heating Solutions Ltd</div>
+    </div>
   </div>
-  <button onclick="switchTab('admin')" title="Manage" aria-label="Admin" style="position:relative;z-index:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.6);width:38px;height:38px;border-radius:8px;font-size:16px;cursor:pointer;flex-shrink:0;">⚙</button>
+  <div style="display:flex;flex-direction:column;gap:6px;position:relative;z-index:1;">
+    <a href="https://bmrfc.co.uk/youth/" target="_blank" rel="noopener" title="BMR Youth" style="display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);width:38px;height:38px;border-radius:8px;font-size:18px;text-decoration:none;">🌐</a>
+    <button onclick="switchTab('admin')" title="Manage" aria-label="Admin" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.6);width:38px;height:38px;border-radius:8px;font-size:16px;cursor:pointer;">⚙</button>
+  </div>
 </header>
 
 <div class="main">
   <div id="tab-fixtures" class="tab-content active">
+    <div style="background:var(--primary);color:rgba(255,255,255,0.85);border-radius:10px;padding:14px 16px;margin-bottom:20px;font-size:13px;line-height:1.5;border-left:4px solid var(--gold);">
+      Goals, results, and player stats for the 26/27 BMR Hurricanes season. Fixtures and training are managed on <a href="https://spond.com/invite/PFKFW" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:underline;">Spond</a>.
+    </div>
     <div id="fixturesContent"><div class="loading-overlay">Loading fixtures…</div></div>
   </div>
 
@@ -569,8 +578,15 @@ async function renderAdminContent(email) {
         <div class="form-group"><label>Hurricanes Goals</label><input type="number" id="hurricanesGoals" min="0" placeholder="0"></div>
         <div class="form-group"><label>Opponent Goals</label><input type="number" id="opponentGoals" min="0" placeholder="0"></div>
         <div class="form-group">
-          <label>Player of the Match</label>
-          <select id="potmSelect">
+          <label>Coaches POTM</label>
+          <select id="coachesPotmSelect">
+            <option value="">-- None --</option>
+            ${PLAYERS.map(p => '<option>' + p + '</option>').join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Parents POTM</label>
+          <select id="parentsPotmSelect">
             <option value="">-- None --</option>
             ${PLAYERS.map(p => '<option>' + p + '</option>').join('')}
           </select>
@@ -604,7 +620,8 @@ async function loadResults() {
     results[r.fixture_id] = {
       hurricanes: r.hurricanes_goals,
       opponent: r.opponent_goals,
-      potm: r.player_of_match
+      coachesPotm: r.coaches_potm,
+      parentsPotm: r.parents_potm
     };
   });
   const goalData = await sbFetch('goal_scorers?select=*');
@@ -691,8 +708,11 @@ function buildMatchCard(f) {
   }
 
   let potmLine = '';
-  if (isPlayed && res.potm) {
-    potmLine = '<div class="match-potm" style="grid-column:1/-1;">🌟 Player of the Match: ' + res.potm + '</div>';
+  if (isPlayed && res.coachesPotm) {
+    potmLine += '<div class="match-potm" style="grid-column:1/-1;">🏅 Coaches POTM: ' + res.coachesPotm + '</div>';
+  }
+  if (isPlayed && res.parentsPotm) {
+    potmLine += '<div class="match-potm" style="grid-column:1/-1;">⭐ Parents POTM: ' + res.parentsPotm + '</div>';
   }
 
   let timesLine = '';
@@ -778,7 +798,6 @@ function renderResults() {
   });
 
   const goalDiff = s.goalsFor - s.goalsAgainst;
-  const points = (s.wins * 3) + s.draws;
   const recentForm = playedFixtures.slice(-10);
   let formHtml = '';
   recentForm.forEach(f => {
@@ -790,8 +809,8 @@ function renderResults() {
 
   let html = '<div class="section"><h3>Our Record</h3>' +
     '<table class="table">' +
-    '<tr><th>Played</th><th>Wins</th><th>Draws</th><th>Losses</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr>' +
-    '<tr><td>' + s.played + '</td><td>' + s.wins + '</td><td>' + s.draws + '</td><td>' + s.losses + '</td><td>' + s.goalsFor + '</td><td>' + s.goalsAgainst + '</td><td>' + goalDiff + '</td><td style="font-weight:700;color:var(--primary);font-size:16px;">' + points + '</td></tr>' +
+    '<tr><th>Played</th><th>Wins</th><th>Draws</th><th>Losses</th><th>GF</th><th>GA</th><th>GD</th></tr>' +
+    '<tr><td>' + s.played + '</td><td>' + s.wins + '</td><td>' + s.draws + '</td><td>' + s.losses + '</td><td>' + s.goalsFor + '</td><td>' + s.goalsAgainst + '</td><td>' + goalDiff + '</td></tr>' +
     '</table>' +
     (formHtml ? '<div style="margin-top:20px;"><div style="font-size:12px;font-weight:600;color:var(--grey-600);margin-bottom:6px;">FORM (LAST ' + recentForm.length + ')</div><div class="form-string">' + formHtml.trim() + '</div></div>' : '') +
     '</div>';
@@ -846,15 +865,16 @@ function renderPlayerStats() {
   const GK_NAME = 'Billy';
 
   const stats = squad.map(p => {
-    let goals = 0, potm = 0, cleanSheets = 0;
+    let goals = 0, coachesPotm = 0, parentsPotm = 0, cleanSheets = 0;
     const isGK = p.name === GK_NAME;
     playedFixtures.forEach(f => {
       const res = results[f.id];
-      if (res.potm === p.name) potm++;
+      if (res.coachesPotm === p.name) coachesPotm++;
+      if (res.parentsPotm === p.name) parentsPotm++;
       if (isGK && res.opponent === 0) cleanSheets++;
       (goalScorers[f.id] || []).forEach(s => { if (s.player === p.name) goals += s.goals; });
     });
-    return { name: p.name, goals, potm, cleanSheets, isGK };
+    return { name: p.name, goals, coachesPotm, parentsPotm, cleanSheets, isGK };
   });
 
   stats.sort((a, b) => {
@@ -874,13 +894,14 @@ function renderPlayerStats() {
     '<th class="sortable" onclick="setStatsSort(\'name\')">Player' + sortArrow('name') + '</th>' +
     '<th class="sortable" onclick="setStatsSort(\'goals\')">#' + sortArrow('goals') + '</th>' +
     '<th class="sortable" onclick="setStatsSort(\'cleanSheets\')">CS' + sortArrow('cleanSheets') + '</th>' +
-    '<th class="sortable" onclick="setStatsSort(\'potm\')">POTM' + sortArrow('potm') + '</th>' +
+    '<th class="sortable" onclick="setStatsSort(\'coachesPotm\')">🏅' + sortArrow('coachesPotm') + '</th>' +
+    '<th class="sortable" onclick="setStatsSort(\'parentsPotm\')">⭐' + sortArrow('parentsPotm') + '</th>' +
     '</tr>';
   stats.forEach(s => {
     const csDisplay = s.isGK ? s.cleanSheets : '<span style="color:var(--grey-400);">—</span>';
-    html += '<tr><td>' + s.name + '</td><td>' + s.goals + '</td><td>' + csDisplay + '</td><td>' + s.potm + '</td></tr>';
+    html += '<tr><td>' + s.name + '</td><td>' + s.goals + '</td><td>' + csDisplay + '</td><td>' + s.coachesPotm + '</td><td>' + s.parentsPotm + '</td></tr>';
   });
-  html += '</table><div style="font-size:11px;color:var(--grey-400);margin-top:10px;"># = goals scored · CS = clean sheets (goalkeeper only) · POTM = Player of the Match · tap a column to sort</div></div>';
+  html += '</table><div style="font-size:11px;color:var(--grey-400);margin-top:10px;"># = goals · CS = clean sheets (GK only) · 🏅 = Coaches POTM · ⭐ = Parents POTM · tap column to sort</div></div>';
   container.innerHTML = html;
 }
 
@@ -891,7 +912,6 @@ function renderSquad() {
   let html = '';
   squad.forEach(p => {
     html += '<div class="leaderboard-item">' +
-      '<div class="leaderboard-rank">' + (p.shirt_number != null ? p.shirt_number : '-') + '</div>' +
       '<div class="leaderboard-name">' + p.name + '</div>' +
       '</div>';
   });
@@ -1049,7 +1069,8 @@ function loadMatchForResult() {
   const res = results[matchId] || {};
   document.getElementById('hurricanesGoals').value = res.hurricanes || '';
   document.getElementById('opponentGoals').value = res.opponent || '';
-  document.getElementById('potmSelect').value = res.potm || '';
+  document.getElementById('coachesPotmSelect').value = res.coachesPotm || '';
+  document.getElementById('parentsPotmSelect').value = res.parentsPotm || '';
   const scorers = goalScorers[matchId] || [];
   const list = document.getElementById('goalScorersList');
   list.innerHTML = '';
@@ -1075,7 +1096,8 @@ async function saveResult() {
   const matchId = parseInt(document.getElementById('matchSelect').value);
   const hurricanesGoals = parseInt(document.getElementById('hurricanesGoals').value) || 0;
   const opponentGoals = parseInt(document.getElementById('opponentGoals').value) || 0;
-  const potm = document.getElementById('potmSelect').value || null;
+  const coachesPotm = document.getElementById('coachesPotmSelect').value || null;
+  const parentsPotm = document.getElementById('parentsPotmSelect').value || null;
   const scorerInputs = document.querySelectorAll('#goalScorersList .goal-inputs');
   const scorers = [];
   scorerInputs.forEach(inp => {
@@ -1088,7 +1110,7 @@ async function saveResult() {
     await sbFetch('goal_scorers?fixture_id=eq.' + matchId, { method: 'DELETE' });
     await sbFetch('match_results', {
       method: 'POST',
-      body: JSON.stringify([{ fixture_id: matchId, hurricanes_goals: hurricanesGoals, opponent_goals: opponentGoals, player_of_match: potm }])
+      body: JSON.stringify([{ fixture_id: matchId, hurricanes_goals: hurricanesGoals, opponent_goals: opponentGoals, coaches_potm: coachesPotm, parents_potm: parentsPotm }])
     });
     if (scorers.length > 0) {
       await sbFetch('goal_scorers', { method: 'POST', body: JSON.stringify(scorers) });
