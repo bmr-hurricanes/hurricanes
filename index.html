@@ -806,12 +806,12 @@ function renderResults() {
     else formHtml += '<span class="l">L</span> ';
   });
 
-  let html = '<div class="section"><h3>Our Record</h3>' +
+  let html = '<div class="section">' +
     '<table class="table">' +
     '<tr><th>Played</th><th>Wins</th><th>Draws</th><th>Losses</th><th>GF</th><th>GA</th><th>GD</th></tr>' +
     '<tr><td>' + s.played + '</td><td>' + s.wins + '</td><td>' + s.draws + '</td><td>' + s.losses + '</td><td>' + s.goalsFor + '</td><td>' + s.goalsAgainst + '</td><td>' + goalDiff + '</td></tr>' +
     '</table>' +
-    (formHtml ? '<div style="margin-top:20px;"><div style="font-size:12px;font-weight:600;color:var(--grey-600);margin-bottom:6px;">FORM (LAST ' + recentForm.length + ')</div><div class="form-string">' + formHtml.trim() + '</div></div>' : '') +
+    (formHtml ? '<div style="margin-top:20px;"><div style="font-size:12px;font-weight:600;color:var(--grey-600);margin-bottom:6px;">LAST 10 MATCHES</div><div class="form-string">' + formHtml.trim() + '</div></div>' : '') +
     '</div>';
 
   [...playedFixtures].reverse().forEach(f => { html += buildMatchCard(f); });
@@ -888,10 +888,10 @@ function renderPlayerStats() {
     return statsSortDir === 'asc' ? cmp : -cmp;
   });
 
-  let html = '<div class="section"><h3>Player Stats</h3>' +
+  let html = '<div class="section">' +
     '<table class="table"><tr>' +
     '<th class="sortable" onclick="setStatsSort(\'name\')">Player' + sortArrow('name') + '</th>' +
-    '<th class="sortable" onclick="setStatsSort(\'goals\')">#' + sortArrow('goals') + '</th>' +
+    '<th class="sortable" onclick="setStatsSort(\'goals\')">Goals' + sortArrow('goals') + '</th>' +
     '<th class="sortable" onclick="setStatsSort(\'cleanSheets\')">CS' + sortArrow('cleanSheets') + '</th>' +
     '<th class="sortable" onclick="setStatsSort(\'coachesPotm\')">🏅' + sortArrow('coachesPotm') + '</th>' +
     '<th class="sortable" onclick="setStatsSort(\'parentsPotm\')">⭐' + sortArrow('parentsPotm') + '</th>' +
@@ -900,7 +900,7 @@ function renderPlayerStats() {
     const csDisplay = s.isGK ? s.cleanSheets : '<span style="color:var(--grey-400);">—</span>';
     html += '<tr><td>' + s.name + '</td><td>' + s.goals + '</td><td>' + csDisplay + '</td><td>' + s.coachesPotm + '</td><td>' + s.parentsPotm + '</td></tr>';
   });
-  html += '</table><div style="font-size:11px;color:var(--grey-400);margin-top:10px;"># = goals · CS = clean sheets (GK only) · 🏅 = Coaches POTM · ⭐ = Parents POTM · tap column to sort</div></div>';
+  html += '</table><div style="font-size:11px;color:var(--grey-400);margin-top:10px;">Goals = total goals scored · CS = clean sheets (GK only) · 🏅 = Coaches POTM · ⭐ = Parents POTM · tap column to sort</div></div>';
   container.innerHTML = html;
 }
 
