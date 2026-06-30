@@ -751,6 +751,13 @@ function buildMatchCard(f) {
     potmLine += '</div>';
   }
 
+  let shareButton = '';
+  if (isPlayed) {
+    shareButton = '<div style="grid-column:1/-1;text-align:center;margin-top:-8px;">' +
+      '<a href="#" onclick="shareResult(' + f.id + ');return false;" style="font-size:11px;color:#c2c8d1;text-decoration:none;">Share</a>' +
+      '</div>';
+  }
+
   let timesLine = '';
   if (!isPlayed) {
     const koStr = f.kickoff_time ? f.kickoff_time.slice(11, 16) : '';
@@ -767,19 +774,13 @@ function buildMatchCard(f) {
     locationLine = '<div class="match-scorers" style="grid-column:1/-1;"><a href="' + mapLink(f.location) + '" target="_blank" rel="noopener" style="color:var(--primary);">📍 ' + f.location + '</a></div>';
   }
 
-  let shareButton = '';
-  if (isPlayed) {
-    shareButton = '<button onclick="shareResult(' + f.id + ')" title="Share result" aria-label="Share result" style="position:absolute;top:10px;right:10px;background:none;border:1px solid var(--grey-200);border-radius:6px;width:28px;height:28px;font-size:13px;color:var(--grey-600);cursor:pointer;font-family:\'Inter\',sans-serif;display:flex;align-items:center;justify-content:center;">📤</button>';
-  }
-
-  return '<div class="match-card" style="position:relative;">' +
-    shareButton +
+  return '<div class="match-card">' +
     '<div class="match-team home">Hurricanes<div class="match-meta">' + formatDate(f.date) + '</div></div>' +
     scoreHtml +
     '<div class="match-team away">' + f.opponent + '<div class="match-meta">' + (result ? result : f.home_away) + '</div></div>' +
     timesLine + locationLine +
     (!isPlayed ? buildNotesLine(f.comments, true) : '') +
-    scorersLine + potmLine +
+    scorersLine + potmLine + shareButton +
     '</div>';
 }
 
