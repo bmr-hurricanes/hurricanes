@@ -142,6 +142,28 @@
   .btn-danger { background: var(--red); }
   .btn-danger:hover { background: #b91c1c; }
 
+  .pin-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--grey-200);
+    background: var(--white);
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .pin-dot.filled { background: var(--primary); border-color: var(--primary); }
+  .pin-key {
+    background: var(--grey-50);
+    border: 1px solid var(--grey-200);
+    border-radius: 10px;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--grey-800);
+    padding: 16px 0;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+  }
+  .pin-key:active { background: var(--grey-200); }
+
   .section {
     background: var(--white);
     border-radius: 10px;
@@ -230,11 +252,11 @@
     margin-top: 4px;
   }
   .match-potm {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--grey-600);
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--grey-400);
     text-align: center;
-    margin-top: 4px;
+    margin-top: -8px;
   }
   .match-notes { grid-column: 1 / -1; font-size: 12px; color: rgba(255,255,255,0.6); text-align: center; margin-top: 4px; margin-bottom: 10px; font-style: italic; }
   .match-notes.light { color: var(--grey-500); }
@@ -343,18 +365,18 @@
 </head>
 <body>
 
-<header>
+<header id="appHeader">
   <div style="display:flex;align-items:center;gap:14px;position:relative;z-index:1;">
-    <img src="https://raw.githubusercontent.com/bmr-hurricanes/hurricanes/main/apple-touch-icon.png" alt="BMR crest" style="width:72px;height:72px;border-radius:50%;border:2px solid var(--gold);flex-shrink:0;object-fit:cover;">
+    <img id="headerCrest" src="https://raw.githubusercontent.com/bmr-hurricanes/hurricanes/main/apple-touch-icon.png" alt="Team crest" style="width:72px;height:72px;border-radius:50%;border:2px solid var(--gold);flex-shrink:0;object-fit:cover;">
     <div>
-      <h1>Baffins Milton Rovers Hurricanes</h1>
-      <div class="header-meta">Coaches: Sam Game &amp; Chad Clarke</div>
-      <div class="header-meta" style="margin-top:2px;">Sponsors: <a href="https://jwmconstructionconsultants.co.uk/" target="_blank" rel="noopener" style="color:rgba(255,255,255,0.55);text-decoration:underline;">JWM Consultants</a></div>
-      <div class="header-meta"><a href="https://hphsltd.com/" target="_blank" rel="noopener" style="color:rgba(255,255,255,0.55);text-decoration:underline;">Hants Heating &amp; Plumbing Solutions</a></div>
+      <h1 id="headerTeamName">Baffins Milton Rovers Hurricanes</h1>
+      <div class="header-meta" id="headerCoaches">Coaches: Sam Game &amp; Chad Clarke</div>
+      <div class="header-meta" id="headerSponsor1" style="margin-top:2px;"></div>
+      <div class="header-meta" id="headerSponsor2"></div>
     </div>
   </div>
   <div style="display:flex;flex-direction:column;gap:6px;position:relative;z-index:1;">
-    <a href="https://bmrfc.co.uk/youth/" target="_blank" rel="noopener" title="BMR Youth" style="display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);width:38px;height:38px;border-radius:8px;font-size:18px;text-decoration:none;">🌐</a>
+    <a id="headerClubLink" href="https://bmrfc.co.uk/youth/" target="_blank" rel="noopener" title="Club site" style="display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);width:38px;height:38px;border-radius:8px;font-size:18px;text-decoration:none;">🌐</a>
     <button onclick="switchTab('admin')" title="Manage" aria-label="Admin" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.6);width:38px;height:38px;border-radius:8px;font-size:16px;cursor:pointer;">⚙</button>
   </div>
 </header>
@@ -385,15 +407,28 @@
 
   <div id="tab-admin" class="tab-content">
     <div id="adminLock" class="section" style="text-align:center;">
-      <h3>Admin Login</h3>
-      <p style="margin-bottom:16px;color:var(--grey-600);">Sign in to manage fixtures and results</p>
-      <div class="form-group" style="max-width:300px;margin:0 auto;">
-        <input type="email" id="adminEmail" placeholder="Email" autocomplete="username">
+      <h3>Enter PIN</h3>
+      <div id="pinDots" style="display:flex;justify-content:center;gap:14px;margin:20px 0;">
+        <div class="pin-dot" id="pinDot0"></div>
+        <div class="pin-dot" id="pinDot1"></div>
+        <div class="pin-dot" id="pinDot2"></div>
+        <div class="pin-dot" id="pinDot3"></div>
       </div>
-      <div class="form-group" style="max-width:300px;margin:0 auto;">
-        <input type="password" id="adminPassword" placeholder="Password" autocomplete="current-password" onkeypress="if(event.key==='Enter') signInAdmin()">
+      <div id="pinError" style="color:var(--red);font-size:13px;font-weight:600;min-height:18px;margin-bottom:8px;"></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:240px;margin:0 auto;">
+        <button class="pin-key" onclick="pinPress('1')">1</button>
+        <button class="pin-key" onclick="pinPress('2')">2</button>
+        <button class="pin-key" onclick="pinPress('3')">3</button>
+        <button class="pin-key" onclick="pinPress('4')">4</button>
+        <button class="pin-key" onclick="pinPress('5')">5</button>
+        <button class="pin-key" onclick="pinPress('6')">6</button>
+        <button class="pin-key" onclick="pinPress('7')">7</button>
+        <button class="pin-key" onclick="pinPress('8')">8</button>
+        <button class="pin-key" onclick="pinPress('9')">9</button>
+        <div></div>
+        <button class="pin-key" onclick="pinPress('0')">0</button>
+        <button class="pin-key" onclick="pinBackspace()">⌫</button>
       </div>
-      <button class="btn" onclick="signInAdmin()">Sign In</button>
     </div>
     <div id="adminContent" style="display:none;"></div>
   </div>
@@ -437,6 +472,20 @@ let fixtures = [];
 let results = {};
 let goalScorers = {};
 let squad = [];
+let attendance = {}; // fixture_id -> { player_id: status }
+let config = {};
+
+const CONFIG_DEFAULTS = {
+  team_name: 'Baffins Milton Rovers Hurricanes',
+  coaches: 'Sam Game & Chad Clarke',
+  sponsor1_name: 'JWM Consultants',
+  sponsor1_url: 'https://jwmconstructionconsultants.co.uk/',
+  sponsor2_name: 'Hants Heating & Plumbing Solutions',
+  sponsor2_url: 'https://hphsltd.com/',
+  club_url: 'https://bmrfc.co.uk/youth/',
+  primary_colour: '#1a56c4',
+  accent_colour: '#f0c030'
+};
 
 let statsSortColumn = 'goals';
 let statsSortDir = 'desc';
@@ -459,9 +508,12 @@ async function sbFetch(path, options = {}) {
 }
 
 async function loadAndRender() {
+  await loadConfig();
   await loadFixtures();
   await loadResults();
   await loadSquad();
+  await loadAttendance();
+  applyConfig();
   renderFixtures();
   renderResults();
   renderPlayerStats();
@@ -470,12 +522,71 @@ async function loadAndRender() {
   populateEditFixtureSelect();
 }
 
+async function loadConfig() {
+  try {
+    const rows = await sbFetch('app_config?select=*');
+    config = { ...CONFIG_DEFAULTS };
+    rows.forEach(r => { config[r.key] = r.value; });
+  } catch(e) {
+    // Table may not exist yet — fall back to hardcoded defaults
+    config = { ...CONFIG_DEFAULTS };
+  }
+}
+
+function applyConfig() {
+  document.getElementById('headerTeamName').textContent = config.team_name;
+  document.getElementById('headerCoaches').textContent = 'Coaches: ' + config.coaches;
+  document.title = config.team_name;
+
+  const s1 = document.getElementById('headerSponsor1');
+  if (config.sponsor1_name) {
+    s1.innerHTML = (config.sponsor1_url
+      ? '<a href="' + config.sponsor1_url + '" target="_blank" rel="noopener" style="color:rgba(255,255,255,0.55);text-decoration:underline;">' + config.sponsor1_name + '</a>'
+      : config.sponsor1_name);
+  } else { s1.innerHTML = ''; }
+
+  const s2 = document.getElementById('headerSponsor2');
+  if (config.sponsor2_name) {
+    s2.innerHTML = (config.sponsor2_url
+      ? '<a href="' + config.sponsor2_url + '" target="_blank" rel="noopener" style="color:rgba(255,255,255,0.55);text-decoration:underline;">' + config.sponsor2_name + '</a>'
+      : config.sponsor2_name);
+  } else { s2.innerHTML = ''; }
+
+  const clubLink = document.getElementById('headerClubLink');
+  if (config.club_url) { clubLink.href = config.club_url; clubLink.style.display = 'flex'; }
+  else { clubLink.style.display = 'none'; }
+
+  if (config.primary_colour) {
+    document.documentElement.style.setProperty('--primary', config.primary_colour);
+    document.documentElement.style.setProperty('--primary-dark', shadeColour(config.primary_colour, -20));
+  }
+  if (config.accent_colour) document.documentElement.style.setProperty('--gold', config.accent_colour);
+}
+
+function shadeColour(hex, percent) {
+  // Darkens (negative percent) or lightens (positive) a hex colour
+  let h = hex.replace('#', '');
+  if (h.length === 3) h = h.split('').map(c => c + c).join('');
+  const num = parseInt(h, 16);
+  let r = (num >> 16) + Math.round(255 * (percent / 100));
+  let g = ((num >> 8) & 0x00FF) + Math.round(255 * (percent / 100));
+  let b = (num & 0x0000FF) + Math.round(255 * (percent / 100));
+  r = Math.max(0, Math.min(255, r));
+  g = Math.max(0, Math.min(255, g));
+  b = Math.max(0, Math.min(255, b));
+  return '#' + (0x1000000 + r * 0x10000 + g * 0x100 + b).toString(16).slice(1);
+}
+
 async function init() {
   try { await loadAndRender(); }
   catch(e) { showToast('Failed to load data: ' + e.message, true); }
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────
+const ADMIN_EMAIL = 'bmr@admin.com';
+const PIN_LENGTH = 4;
+let pinEntry = '';
+
 async function checkAdminSession() {
   const { data } = await supabaseClient.auth.getSession();
   const lock = document.getElementById('adminLock');
@@ -488,17 +599,44 @@ async function checkAdminSession() {
     lock.style.display = 'block';
     content.style.display = 'none';
     content.innerHTML = '';
+    pinEntry = '';
+    updatePinDots();
+    const errEl = document.getElementById('pinError');
+    if (errEl) errEl.textContent = '';
   }
 }
 
-async function signInAdmin() {
-  const email = document.getElementById('adminEmail').value.trim();
-  const password = document.getElementById('adminPassword').value;
-  if (!email || !password) { showToast('Enter email and password', true); return; }
-  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-  if (error) { showToast('Sign in failed: ' + error.message, true); return; }
-  document.getElementById('adminPassword').value = '';
-  await checkAdminSession();
+function updatePinDots() {
+  for (let i = 0; i < PIN_LENGTH; i++) {
+    const dot = document.getElementById('pinDot' + i);
+    if (dot) dot.classList.toggle('filled', i < pinEntry.length);
+  }
+}
+
+function pinBackspace() {
+  pinEntry = pinEntry.slice(0, -1);
+  updatePinDots();
+}
+
+async function pinPress(digit) {
+  if (pinEntry.length >= PIN_LENGTH) return;
+  pinEntry += digit;
+  updatePinDots();
+  const errEl = document.getElementById('pinError');
+  if (errEl) errEl.textContent = '';
+
+  if (pinEntry.length === PIN_LENGTH) {
+    const pin = pinEntry;
+    const { error } = await supabaseClient.auth.signInWithPassword({ email: ADMIN_EMAIL, password: pin });
+    if (error) {
+      if (errEl) errEl.textContent = 'Incorrect PIN';
+      pinEntry = '';
+      updatePinDots();
+    } else {
+      pinEntry = '';
+      await checkAdminSession();
+    }
+  }
 }
 
 async function signOutAdmin() {
@@ -603,7 +741,12 @@ async function renderAdminContent(email) {
         <h3 style="margin-top:20px;margin-bottom:12px;">Goal Scorers</h3>
         <div id="goalScorersList"></div>
         <button class="btn" style="margin-top:12px;" onclick="addGoalScorerInput()">+ Add Goal Scorer</button>
-        <button class="btn btn-secondary" style="margin-top:12px;margin-left:8px;" onclick="saveResult()">Save Result</button>
+
+        <h3 style="margin-top:20px;margin-bottom:12px;">Squad Attendance</h3>
+        <p style="font-size:12px;color:var(--grey-600);margin-bottom:10px;">Everyone defaults to attending — tap a player to mark them absent for this match.</p>
+        <div id="attendanceList"></div>
+
+        <button class="btn btn-secondary" style="margin-top:16px;" onclick="saveResult()">Save Result</button>
       </div>
     </div>
 
@@ -611,6 +754,25 @@ async function renderAdminContent(email) {
       <h3>Export Season Data</h3>
       <p style="font-size:13px;color:var(--grey-600);margin-bottom:14px;">Downloads a complete snapshot of all fixtures, results, goals, and squad as a JSON file. Keep a copy at the end of the season.</p>
       <button class="btn" onclick="exportSeasonData()">⬇ Download Season Backup</button>
+    </div>
+
+    <div class="section">
+      <button onclick="toggleTeamSettings()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:0;width:100%;text-align:left;">
+        <h3 style="margin:0;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;color:var(--primary);">Team Settings</h3>
+        <span id="teamSettingsArrow" style="font-size:11px;color:var(--grey-400);margin-left:auto;">▼ expand</span>
+      </button>
+      <div id="teamSettingsBody" style="display:none;margin-top:16px;">
+        <div class="form-group"><label>Team Name</label><input type="text" id="cfgTeamName"></div>
+        <div class="form-group"><label>Coaches</label><input type="text" id="cfgCoaches"></div>
+        <div class="form-group"><label>Sponsor 1 Name</label><input type="text" id="cfgSponsor1Name"></div>
+        <div class="form-group"><label>Sponsor 1 URL</label><input type="text" id="cfgSponsor1Url"></div>
+        <div class="form-group"><label>Sponsor 2 Name</label><input type="text" id="cfgSponsor2Name"></div>
+        <div class="form-group"><label>Sponsor 2 URL</label><input type="text" id="cfgSponsor2Url"></div>
+        <div class="form-group"><label>Club Contact URL</label><input type="text" id="cfgClubUrl"></div>
+        <div class="form-group"><label>Primary Colour</label><input type="color" id="cfgPrimaryColour" style="height:42px;padding:4px;"></div>
+        <div class="form-group"><label>Accent Colour</label><input type="color" id="cfgAccentColour" style="height:42px;padding:4px;"></div>
+        <button class="btn" onclick="saveTeamSettings()">Save Settings</button>
+      </div>
     </div>
   `;
   populateMatchSelect();
@@ -648,6 +810,19 @@ async function loadSquad() {
   } catch(e) {
     // Table may not exist yet — fail silently and keep hardcoded PLAYERS
     squad = [];
+  }
+}
+
+async function loadAttendance() {
+  try {
+    const rows = await sbFetch('match_attendance?select=*');
+    attendance = {};
+    rows.forEach(r => {
+      if (!attendance[r.fixture_id]) attendance[r.fixture_id] = {};
+      attendance[r.fixture_id][r.player_id] = r.status;
+    });
+  } catch(e) {
+    attendance = {};
   }
 }
 
@@ -907,7 +1082,7 @@ function renderPlayerStats() {
   const GK_NAME = 'Billy';
 
   const stats = squad.map(p => {
-    let goals = 0, coachesPotm = 0, parentsPotm = 0, cleanSheets = 0;
+    let goals = 0, coachesPotm = 0, parentsPotm = 0, cleanSheets = 0, played = 0;
     const isGK = p.name === GK_NAME;
     playedFixtures.forEach(f => {
       const res = results[f.id];
@@ -915,8 +1090,12 @@ function renderPlayerStats() {
       if (res.parentsPotm === p.name) parentsPotm++;
       if (isGK && res.opponent === 0) cleanSheets++;
       (goalScorers[f.id] || []).forEach(s => { if (s.player === p.name) goals += s.goals; });
+      const fixtureAttendance = attendance[f.id];
+      // If no attendance record exists for this fixture, assume played (back-compat with matches recorded before attendance existed)
+      const status = fixtureAttendance ? fixtureAttendance[p.id] : 'yes';
+      if (status === 'yes' || status === undefined) played++;
     });
-    return { name: p.name, goals, coachesPotm, parentsPotm, cleanSheets, isGK };
+    return { name: p.name, goals, coachesPotm, parentsPotm, cleanSheets, isGK, played };
   });
 
   stats.sort((a, b) => {
@@ -934,6 +1113,7 @@ function renderPlayerStats() {
   let html = '<div class="section">' +
     '<table class="table"><tr>' +
     '<th class="sortable" onclick="setStatsSort(\'name\')">Player' + sortArrow('name') + '</th>' +
+    '<th class="sortable" onclick="setStatsSort(\'played\')">P' + sortArrow('played') + '</th>' +
     '<th class="sortable" onclick="setStatsSort(\'goals\')">Goals' + sortArrow('goals') + '</th>' +
     '<th class="sortable" onclick="setStatsSort(\'cleanSheets\')">CS' + sortArrow('cleanSheets') + '</th>' +
     '<th class="sortable" onclick="setStatsSort(\'coachesPotm\')">🏅' + sortArrow('coachesPotm') + '</th>' +
@@ -941,9 +1121,9 @@ function renderPlayerStats() {
     '</tr>';
   stats.forEach(s => {
     const csDisplay = s.isGK ? s.cleanSheets : '<span style="color:var(--grey-400);">—</span>';
-    html += '<tr><td>' + s.name + '</td><td>' + s.goals + '</td><td>' + csDisplay + '</td><td>' + s.coachesPotm + '</td><td>' + s.parentsPotm + '</td></tr>';
+    html += '<tr><td>' + s.name + '</td><td>' + s.played + '</td><td>' + s.goals + '</td><td>' + csDisplay + '</td><td>' + s.coachesPotm + '</td><td>' + s.parentsPotm + '</td></tr>';
   });
-  html += '</table><div style="font-size:11px;color:var(--grey-400);margin-top:10px;">Goals = total goals scored · CS = clean sheets (GK only) · 🏅 = Coaches POTM · ⭐ = Parents POTM · tap column to sort</div></div>';
+  html += '</table><div style="font-size:11px;color:var(--grey-400);margin-top:10px;">P = matches played · Goals = total goals scored · CS = clean sheets (GK only) · 🏅 = Coaches POTM · ⭐ = Parents POTM · tap column to sort</div></div>';
   container.innerHTML = html;
 }
 
@@ -959,6 +1139,52 @@ function renderSquad() {
       '</div>';
   });
   container.innerHTML = html;
+}
+
+// ── Admin: team settings ──────────────────────────────────────────────────
+function toggleTeamSettings() {
+  const body = document.getElementById('teamSettingsBody');
+  const arrow = document.getElementById('teamSettingsArrow');
+  if (!body) return;
+  const open = body.style.display === 'none';
+  body.style.display = open ? 'block' : 'none';
+  if (arrow) arrow.textContent = open ? '▲ collapse' : '▼ expand';
+  if (open) {
+    document.getElementById('cfgTeamName').value = config.team_name || '';
+    document.getElementById('cfgCoaches').value = config.coaches || '';
+    document.getElementById('cfgSponsor1Name').value = config.sponsor1_name || '';
+    document.getElementById('cfgSponsor1Url').value = config.sponsor1_url || '';
+    document.getElementById('cfgSponsor2Name').value = config.sponsor2_name || '';
+    document.getElementById('cfgSponsor2Url').value = config.sponsor2_url || '';
+    document.getElementById('cfgClubUrl').value = config.club_url || '';
+    document.getElementById('cfgPrimaryColour').value = config.primary_colour || '#1a56c4';
+    document.getElementById('cfgAccentColour').value = config.accent_colour || '#f0c030';
+  }
+}
+
+async function saveTeamSettings() {
+  const updates = {
+    team_name: document.getElementById('cfgTeamName').value.trim(),
+    coaches: document.getElementById('cfgCoaches').value.trim(),
+    sponsor1_name: document.getElementById('cfgSponsor1Name').value.trim(),
+    sponsor1_url: document.getElementById('cfgSponsor1Url').value.trim(),
+    sponsor2_name: document.getElementById('cfgSponsor2Name').value.trim(),
+    sponsor2_url: document.getElementById('cfgSponsor2Url').value.trim(),
+    club_url: document.getElementById('cfgClubUrl').value.trim(),
+    primary_colour: document.getElementById('cfgPrimaryColour').value,
+    accent_colour: document.getElementById('cfgAccentColour').value
+  };
+  try {
+    const rows = Object.entries(updates).map(([key, value]) => ({ key, value }));
+    await sbFetch('app_config', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify(rows)
+    });
+    config = { ...config, ...updates };
+    applyConfig();
+    showToast('Team settings saved!');
+  } catch(e) { showToast('Error: ' + e.message, true); }
 }
 
 // ── Admin: squad ──────────────────────────────────────────────────────────
@@ -1087,10 +1313,11 @@ async function deleteFixture() {
   try {
     await sbFetch('match_results?fixture_id=eq.' + fixtureId, { method: 'DELETE' });
     await sbFetch('goal_scorers?fixture_id=eq.' + fixtureId, { method: 'DELETE' });
+    await sbFetch('match_attendance?fixture_id=eq.' + fixtureId, { method: 'DELETE' });
     await sbFetch('fixtures?id=eq.' + fixtureId, { method: 'DELETE' });
     document.getElementById('editFixtureForm').style.display = 'none';
     document.getElementById('editFixtureSelect').value = '';
-    await loadFixtures(); await loadResults();
+    await loadFixtures(); await loadResults(); await loadAttendance();
     renderFixtures(); renderResults(); renderPlayerStats();
     populateMatchSelect(); populateEditFixtureSelect();
     showToast('Fixture deleted');
@@ -1109,14 +1336,19 @@ async function addFixture() {
   const kickoff = date + 'T' + time + ':00';
   const meet = meetTime ? date + 'T' + meetTime + ':00' : null;
   try {
-    await sbFetch('fixtures', {
+    const newFixture = await sbFetch('fixtures', {
       method: 'POST',
       body: JSON.stringify([{ opponent, date, kickoff_time: kickoff, meet_time: meet, home_away: homeAway, location, comments }])
     });
+    if (newFixture && newFixture[0] && squad.length > 0) {
+      const fixtureId = newFixture[0].id;
+      const defaultAttendance = squad.map(p => ({ fixture_id: fixtureId, player_id: p.id, status: 'yes' }));
+      await sbFetch('match_attendance', { method: 'POST', body: JSON.stringify(defaultAttendance) });
+    }
     ['fixtureOpponent','fixtureDate','fixtureMeetTime','fixtureTime','fixtureLocation','fixtureComments'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
     });
-    await loadFixtures(); renderFixtures(); populateMatchSelect(); populateEditFixtureSelect();
+    await loadFixtures(); await loadAttendance(); renderFixtures(); populateMatchSelect(); populateEditFixtureSelect();
     showToast('Fixture added!');
   } catch(e) { showToast('Error: ' + e.message, true); }
 }
@@ -1142,6 +1374,40 @@ function loadMatchForResult() {
       '<button class="btn" style="padding:6px 12px;" onclick="this.parentElement.remove()">Remove</button>' +
       '</div>';
   });
+  renderAttendanceToggles(matchId);
+}
+
+function renderAttendanceToggles(matchId) {
+  const container = document.getElementById('attendanceList');
+  if (!container) return;
+  if (squad.length === 0) { container.innerHTML = '<div class="empty-state" style="padding:16px;">Add players to the squad first</div>'; return; }
+  const matchAttendance = attendance[matchId] || {};
+  let html = '<div style="display:flex;flex-wrap:wrap;gap:8px;">';
+  squad.forEach(p => {
+    const status = matchAttendance[p.id] || 'yes';
+    const isAttending = status === 'yes';
+    const bg = isAttending ? 'var(--primary)' : 'var(--grey-200)';
+    const color = isAttending ? 'var(--white)' : 'var(--grey-600)';
+    html += '<button type="button" data-player-id="' + p.id + '" data-status="' + status + '" onclick="toggleAttendance(this)" style="background:' + bg + ';color:' + color + ';border:none;border-radius:20px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:\'Inter\',sans-serif;">' + p.name + (isAttending ? '' : ' — absent') + '</button>';
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function toggleAttendance(btn) {
+  const isAttending = btn.dataset.status === 'yes';
+  const newStatus = isAttending ? 'no' : 'yes';
+  btn.dataset.status = newStatus;
+  const name = btn.textContent.replace(' — absent', '');
+  if (newStatus === 'yes') {
+    btn.style.background = 'var(--primary)';
+    btn.style.color = 'var(--white)';
+    btn.textContent = name;
+  } else {
+    btn.style.background = 'var(--grey-200)';
+    btn.style.color = 'var(--grey-600)';
+    btn.textContent = name + ' — absent';
+  }
 }
 
 function addGoalScorerInput() {
@@ -1182,7 +1448,20 @@ async function saveResult() {
     if (scorers.length > 0) {
       await sbFetch('goal_scorers', { method: 'POST', body: JSON.stringify(scorers) });
     }
-    await loadResults(); renderFixtures(); renderResults(); renderPlayerStats();
+    const attendanceButtons = document.querySelectorAll('#attendanceList button[data-player-id]');
+    if (attendanceButtons.length > 0) {
+      const attendanceRows = Array.from(attendanceButtons).map(btn => ({
+        fixture_id: matchId,
+        player_id: parseInt(btn.dataset.playerId),
+        status: btn.dataset.status
+      }));
+      await sbFetch('match_attendance', {
+        method: 'POST',
+        headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
+        body: JSON.stringify(attendanceRows)
+      });
+    }
+    await loadResults(); await loadAttendance(); renderFixtures(); renderResults(); renderPlayerStats();
     document.getElementById('resultForm').style.display = 'none';
     document.getElementById('matchSelect').value = '';
     showToast('Result saved!');
@@ -1193,25 +1472,27 @@ async function saveResult() {
 async function exportSeasonData() {
   showToast('Preparing export…');
   try {
-    const [rawFixtures, rawResults, rawGoalScorers, rawSquad] = await Promise.all([
+    const [rawFixtures, rawResults, rawGoalScorers, rawSquad, rawAttendance] = await Promise.all([
       sbFetch('fixtures?select=*&order=kickoff_time'),
       sbFetch('match_results?select=*'),
       sbFetch('goal_scorers?select=*'),
       sbFetch('hurricanes_squad?select=*&order=shirt_number').catch(() => []),
+      sbFetch('match_attendance?select=*').catch(() => []),
     ]);
     const exportDate = new Date().toISOString().slice(0,10);
     const payload = {
       exported_at: new Date().toISOString(),
-      team: 'East Lodge Hurricanes',
+      team: config.team_name || 'BMR Hurricanes',
       fixtures: rawFixtures,
       results: rawResults,
       goal_scorers: rawGoalScorers,
       squad: rawSquad,
+      attendance: rawAttendance,
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'EastLodgeHurricanes_' + exportDate + '.json'; a.click();
+    a.href = url; a.download = 'BMRHurricanes_' + exportDate + '.json'; a.click();
     URL.revokeObjectURL(url);
     showToast('Download started!');
   } catch(e) { showToast('Export failed: ' + e.message, true); }
