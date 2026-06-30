@@ -683,6 +683,32 @@ function buildNotesLine(comments, light) {
   return '<div class="match-notes' + (light ? ' light' : '') + '"><span style="font-style:normal;font-weight:600;">Details:</span> ' + comments + '</div>';
 }
 
+function shareResult(fixtureId) {
+  const f = fixtures.find(fx => fx.id === fixtureId);
+  const res = results[fixtureId];
+  if (!f || !res) return;
+
+  let lines = [];
+  lines.push('Hurricanes ' + res.hurricanes + ' - ' + res.opponent + ' ' + f.opponent);
+  lines.push('');
+
+  const scorers = goalScorers[fixtureId];
+  if (scorers && scorers.length > 0) {
+    lines.push('⚽ Goals: ' + scorers.map(s => s.player + ' ' + s.goals).join(', '));
+  }
+  if (res.coachesPotm) lines.push('🏅 Coaches POTM: ' + res.coachesPotm);
+  if (res.parentsPotm) lines.push('⭐ Parents POTM: ' + res.parentsPotm);
+
+  const message = lines.join('\n');
+
+  if (navigator.share) {
+    navigator.share({ text: message }).catch(() => {});
+  } else {
+    const url = 'https://wa.me/?text=' + encodeURIComponent(message);
+    window.open(url, '_blank');
+  }
+}
+
 // ── Match card builder ────────────────────────────────────────────────────
 function buildMatchCard(f) {
   const now = new Date();
@@ -717,11 +743,12 @@ function buildMatchCard(f) {
   }
 
   let potmLine = '';
-  if (isPlayed && res.coachesPotm) {
-    potmLine += '<div class="match-potm" style="grid-column:1/-1;">🏅 Coaches POTM: ' + res.coachesPotm + '</div>';
-  }
-  if (isPlayed && res.parentsPotm) {
-    potmLine += '<div class="match-potm" style="grid-column:1/-1;">⭐ Parents POTM: ' + res.parentsPotm + '</div>';
+  if (isPlayed && (res.coachesPotm || res.parentsPotm)) {
+    potmLine = '<div class="match-potm" style="grid-column:1/-1;">';
+    if (res.coachesPotm) potmLine += '🏅 Coaches POTM: ' + res.coachesPotm;
+    if (res.coachesPotm && res.parentsPotm) potmLine += '<br>';
+    if (res.parentsPotm) potmLine += '⭐ Parents POTM: ' + res.parentsPotm;
+    potmLine += '</div>';
   }
 
   let timesLine = '';
@@ -736,11 +763,17 @@ function buildMatchCard(f) {
   }
 
   let locationLine = '';
-  if (f.location) {
+  if (f.location && !isPlayed) {
     locationLine = '<div class="match-scorers" style="grid-column:1/-1;"><a href="' + mapLink(f.location) + '" target="_blank" rel="noopener" style="color:var(--primary);">📍 ' + f.location + '</a></div>';
   }
 
-  return '<div class="match-card">' +
+  let shareButton = '';
+  if (isPlayed) {
+    shareButton = '<button onclick="shareResult(' + f.id + ')" title="Share result" aria-label="Share result" style="position:absolute;top:10px;right:10px;background:none;border:1px solid var(--grey-200);border-radius:6px;width:28px;height:28px;font-size:13px;color:var(--grey-600);cursor:pointer;font-family:\'Inter\',sans-serif;display:flex;align-items:center;justify-content:center;">📤</button>';
+  }
+
+  return '<div class="match-card" style="position:relative;">' +
+    shareButton +
     '<div class="match-team home">Hurricanes<div class="match-meta">' + formatDate(f.date) + '</div></div>' +
     scoreHtml +
     '<div class="match-team away">' + f.opponent + '<div class="match-meta">' + (result ? result : f.home_away) + '</div></div>' +
