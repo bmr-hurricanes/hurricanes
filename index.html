@@ -470,6 +470,7 @@ let PLAYERS = ['Billy', 'Blake', 'Cooper', 'Ethan', 'Freddie', 'Harry', 'Hayes',
 
 let fixtures = [];
 let results = {};
+let drafts = {};
 let goalScorers = {};
 let squad = [];
 let attendance = {}; // fixture_id -> { player_id: status }
@@ -746,7 +747,13 @@ async function renderAdminContent(email) {
         <p style="font-size:12px;color:var(--grey-600);margin-bottom:10px;">Everyone defaults to attending — tap a player to mark them absent for this match.</p>
         <div id="attendanceList"></div>
 
-        <button class="btn btn-secondary" style="margin-top:16px;" onclick="saveResult()">Save Result</button>
+        <div id="draftStatus" style="display:none;background:var(--gold);color:var(--primary-dark);border-radius:8px;padding:10px 14px;font-size:12px;font-weight:600;margin-top:16px;">
+          📝 Draft saved — parents cannot see this yet
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;">
+          <button class="btn" style="background:var(--grey-600);" onclick="saveResult(false)">Save Draft</button>
+          <button class="btn" onclick="saveResult(true)">Publish Result</button>
+        </div>
       </div>
       <button id="adminShareBtn" style="display:none;margin-top:12px;background:none;border:1.5px solid var(--grey-200);border-radius:8px;padding:10px 16px;font-size:13px;font-weight:600;color:var(--grey-600);cursor:pointer;font-family:Inter,sans-serif;width:100%;" onclick="shareCurrentResult()">↗ Share Result</button>
     </div>
@@ -791,13 +798,20 @@ async function loadFixtures() {
 async function loadResults() {
   const data = await sbFetch('match_results?select=*');
   results = {};
+  drafts = {};
   data.forEach(r => {
-    results[r.fixture_id] = {
+    const entry = {
       hurricanes: r.hurricanes_goals,
       opponent: r.opponent_goals,
       coachesPotm: r.coaches_potm,
-      parentsPotm: r.parents_potm
+      parentsPotm: r.parents_potm,
+      published: r.published !== false
     };
+    if (entry.published) {
+      results[r.fixture_id] = entry;
+    } else {
+      drafts[r.fixture_id] = entry;
+    }
   });
   const goalData = await sbFetch('goal_scorers?select=*');
   goalScorers = {};
@@ -1292,8 +1306,10 @@ function populateMatchSelect() {
   if (!select) return;
   select.innerHTML = '<option value="">-- Select a match --</option>';
   fixtures.forEach(f => {
-    const recorded = results[f.id] !== undefined ? ' ✓ recorded' : '';
-    select.innerHTML += '<option value="' + f.id + '">' + f.opponent + ' (' + f.date + ')' + recorded + '</option>';
+    let status = '';
+    if (results[f.id]) status = ' ✓ published';
+    else if (drafts[f.id]) status = ' 📝 draft';
+    select.innerHTML += '<option value="' + f.id + '">' + f.opponent + ' (' + f.date + ')' + status + '</option>';
   });
 }
 
@@ -1403,9 +1419,16 @@ function loadMatchForResult() {
   if (shareBtn) shareBtn.style.display = 'none';
   if (!matchId) { form.style.display = 'none'; return; }
   form.style.display = 'block';
-  const res = results[matchId] || {};
-  document.getElementById('hurricanesGoals').value = res.hurricanes || '';
-  document.getElementById('opponentGoals').value = res.opponent || '';
+
+  // Load from draft first, fall back to published result
+  const res = drafts[matchId] || results[matchId] || {};
+  const isDraft = !!drafts[matchId];
+
+  const draftStatus = document.getElementById('draftStatus');
+  if (draftStatus) draftStatus.style.display = isDraft ? 'block' : 'none';
+
+  document.getElementById('hurricanesGoals').value = res.hurricanes != null ? res.hurricanes : '';
+  document.getElementById('opponentGoals').value = res.opponent != null ? res.opponent : '';
   document.getElementById('coachesPotmSelect').value = res.coachesPotm || '';
   document.getElementById('parentsPotmSelect').value = res.parentsPotm || '';
   const scorers = goalScorers[matchId] || [];
@@ -1463,7 +1486,7 @@ function addGoalScorerInput() {
     '</div>';
 }
 
-async function saveResult() {
+async function saveResult(publish) {
   const matchId = parseInt(document.getElementById('matchSelect').value);
   const hurricanesGoals = parseInt(document.getElementById('hurricanesGoals').value) || 0;
   const opponentGoals = parseInt(document.getElementById('opponentGoals').value) || 0;
@@ -1481,13 +1504,13 @@ async function saveResult() {
     showToast('Goal scorers (' + totalScorerGoals + ') exceed Hurricanes goals (' + hurricanesGoals + ')', true);
     return;
   }
-  if (!confirm('Save result? This will overwrite any existing result for this match.')) return;
+  if (publish && !confirm('Publish result? Parents will see this immediately.')) return;
   try {
     await sbFetch('match_results?fixture_id=eq.' + matchId, { method: 'DELETE' });
     await sbFetch('goal_scorers?fixture_id=eq.' + matchId, { method: 'DELETE' });
     await sbFetch('match_results', {
       method: 'POST',
-      body: JSON.stringify([{ fixture_id: matchId, hurricanes_goals: hurricanesGoals, opponent_goals: opponentGoals, coaches_potm: coachesPotm, parents_potm: parentsPotm }])
+      body: JSON.stringify([{ fixture_id: matchId, hurricanes_goals: hurricanesGoals, opponent_goals: opponentGoals, coaches_potm: coachesPotm, parents_potm: parentsPotm, published: publish }])
     });
     if (scorers.length > 0) {
       await sbFetch('goal_scorers', { method: 'POST', body: JSON.stringify(scorers) });
@@ -1506,11 +1529,18 @@ async function saveResult() {
       });
     }
     await loadResults(); await loadAttendance(); renderFixtures(); renderResults(); renderPlayerStats();
-    document.getElementById('resultForm').style.display = 'none';
-    document.getElementById('matchSelect').value = '';
-    const shareBtn = document.getElementById('adminShareBtn');
-    if (shareBtn) { shareBtn.style.display = 'block'; shareBtn.dataset.fixtureId = matchId; }
-    showToast('Result saved!');
+
+    if (publish) {
+      document.getElementById('resultForm').style.display = 'none';
+      document.getElementById('matchSelect').value = '';
+      const shareBtn = document.getElementById('adminShareBtn');
+      if (shareBtn) { shareBtn.style.display = 'block'; shareBtn.dataset.fixtureId = matchId; }
+      showToast('Result published!');
+    } else {
+      const draftStatus = document.getElementById('draftStatus');
+      if (draftStatus) draftStatus.style.display = 'block';
+      showToast('Draft saved');
+    }
   } catch(e) { showToast('Error: ' + e.message, true); }
 }
 
