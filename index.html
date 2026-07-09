@@ -748,12 +748,16 @@ async function renderAdminContent(email) {
 
         <button class="btn btn-secondary" style="margin-top:16px;" onclick="saveResult()">Save Result</button>
       </div>
+      <button id="adminShareBtn" style="display:none;margin-top:12px;background:none;border:1.5px solid var(--grey-200);border-radius:8px;padding:10px 16px;font-size:13px;font-weight:600;color:var(--grey-600);cursor:pointer;font-family:Inter,sans-serif;width:100%;" onclick="shareCurrentResult()">↗ Share Result</button>
     </div>
 
     <div class="section">
       <h3>Export Season Data</h3>
-      <p style="font-size:13px;color:var(--grey-600);margin-bottom:14px;">Downloads a complete snapshot of all fixtures, results, goals, and squad as a JSON file. Keep a copy at the end of the season.</p>
-      <button class="btn" onclick="exportSeasonData()">⬇ Download Season Backup</button>
+      <p style="font-size:13px;color:var(--grey-600);margin-bottom:14px;">The CSV opens in Excel or Google Sheets with results, player stats, and squad. The JSON backup contains everything and is used for data recovery.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn" onclick="exportSeasonCSV()">⬇ Export as CSV</button>
+        <button class="btn" onclick="exportSeasonData()">⬇ Full Backup (JSON)</button>
+      </div>
     </div>
 
     <div class="section">
@@ -858,28 +862,49 @@ function buildNotesLine(comments, light) {
   return '<div class="match-notes' + (light ? ' light' : '') + '"><span style="font-style:normal;font-weight:600;">Details:</span> ' + comments + '</div>';
 }
 
+function shareCurrentResult() {
+  const shareBtn = document.getElementById('adminShareBtn');
+  const fixtureId = shareBtn ? parseInt(shareBtn.dataset.fixtureId) : null;
+  if (fixtureId) shareResult(fixtureId);
+}
+
 function shareResult(fixtureId) {
   const f = fixtures.find(fx => fx.id === fixtureId);
   const res = results[fixtureId];
   if (!f || !res) return;
 
-  let lines = [];
-  lines.push('Hurricanes ' + res.hurricanes + ' - ' + res.opponent + ' ' + f.opponent);
-  lines.push('');
+  const won  = res.hurricanes > res.opponent;
+  const drew = res.hurricanes === res.opponent;
+  const teamName = config.team_name || 'Hurricanes';
 
-  const scorers = goalScorers[fixtureId];
-  if (scorers && scorers.length > 0) {
-    lines.push('⚽ Goals: ' + scorers.map(s => s.player + ' ' + s.goals).join(', '));
+  let text = '';
+  if (won)  text += '🏆 What a result! ' + teamName + ' win!\n\n';
+  else if (drew) text += '🤝 A hard-earned point for ' + teamName + '!\n\n';
+  else      text += '👏 Heads held high ' + teamName + '!\n\n';
+
+  text += teamName + ' ' + res.hurricanes + ' - ' + res.opponent + ' ' + f.opponent + '\n\n';
+
+  const scorers = goalScorers[fixtureId] || [];
+  if (scorers.length > 0) {
+    text += '⚽ Well done to today\'s goalscorers:\n';
+    scorers.forEach(s => {
+      text += s.player + (s.goals > 1 ? ' (' + s.goals + ' goals)' : '') + '\n';
+    });
+    text += '\n';
   }
-  if (res.coachesPotm) lines.push('🏅 Coaches POTM: ' + res.coachesPotm);
-  if (res.parentsPotm) lines.push('⭐ Parents POTM: ' + res.parentsPotm);
 
-  const message = lines.join('\n');
+  if (res.coachesPotm || res.parentsPotm) {
+    text += '🌟 Congratulations to today\'s Players of the Match:\n';
+    if (res.coachesPotm) text += '🏅 Coaches\' choice: ' + res.coachesPotm + '\n';
+    if (res.parentsPotm) text += '⭐ Parents\' choice: ' + res.parentsPotm + '\n';
+  }
+
+  text = text.trim();
 
   if (navigator.share) {
-    navigator.share({ text: message }).catch(() => {});
+    navigator.share({ text }).catch(() => {});
   } else {
-    const url = 'https://wa.me/?text=' + encodeURIComponent(message);
+    const url = 'https://wa.me/?text=' + encodeURIComponent(text);
     window.open(url, '_blank');
   }
 }
@@ -927,11 +952,7 @@ function buildMatchCard(f) {
   }
 
   let shareButton = '';
-  if (isPlayed) {
-    shareButton = '<div style="grid-column:1/-1;text-align:center;margin-top:-8px;">' +
-      '<a href="#" onclick="shareResult(' + f.id + ');return false;" style="font-size:11px;color:#c2c8d1;text-decoration:none;">Share</a>' +
-      '</div>';
-  }
+  // Share is admin-only — triggered from Enter Match Result after saving
 
   let timesLine = '';
   if (!isPlayed) {
@@ -1357,6 +1378,8 @@ async function addFixture() {
 function loadMatchForResult() {
   const matchId = parseInt(document.getElementById('matchSelect').value);
   const form = document.getElementById('resultForm');
+  const shareBtn = document.getElementById('adminShareBtn');
+  if (shareBtn) shareBtn.style.display = 'none';
   if (!matchId) { form.style.display = 'none'; return; }
   form.style.display = 'block';
   const res = results[matchId] || {};
@@ -1464,11 +1487,72 @@ async function saveResult() {
     await loadResults(); await loadAttendance(); renderFixtures(); renderResults(); renderPlayerStats();
     document.getElementById('resultForm').style.display = 'none';
     document.getElementById('matchSelect').value = '';
+    const shareBtn = document.getElementById('adminShareBtn');
+    if (shareBtn) { shareBtn.style.display = 'block'; shareBtn.dataset.fixtureId = matchId; }
     showToast('Result saved!');
   } catch(e) { showToast('Error: ' + e.message, true); }
 }
 
 // ── Export ────────────────────────────────────────────────────────────────
+function exportSeasonCSV() {
+  const teamName = (config.team_name || 'Hurricanes').replace(/\s+/g, '_');
+  const date = new Date().toISOString().slice(0, 10);
+  const rows = [];
+
+  // Results section
+  rows.push('RESULTS');
+  rows.push('Date,Opponent,Home/Away,Hurricanes,Opponent,Result,Goal Scorers,Coaches POTM,Parents POTM');
+  fixtures.filter(f => results[f.id]).forEach(f => {
+    const res = results[f.id];
+    const outcome = res.hurricanes > res.opponent ? 'W' : res.hurricanes === res.opponent ? 'D' : 'L';
+    const scorerStr = (goalScorers[f.id] || []).map(s => s.player + ' ' + s.goals).join('; ');
+    rows.push([
+      f.date, '"' + f.opponent + '"', f.home_away,
+      res.hurricanes, res.opponent, outcome,
+      '"' + scorerStr + '"',
+      res.coachesPotm || '', res.parentsPotm || ''
+    ].join(','));
+  });
+
+  // Player Stats section
+  rows.push('');
+  rows.push('PLAYER STATS');
+  rows.push('Player,Played,Goals,Clean Sheets,Coaches POTM,Parents POTM');
+  const playedFixtures = fixtures.filter(f => results[f.id]);
+  const GK_NAME = 'Billy';
+  squad.forEach(p => {
+    let goals = 0, coachesPotm = 0, parentsPotm = 0, cleanSheets = 0, played = 0;
+    const isGK = p.name === GK_NAME;
+    playedFixtures.forEach(f => {
+      const res = results[f.id];
+      if (res.coachesPotm === p.name) coachesPotm++;
+      if (res.parentsPotm === p.name) parentsPotm++;
+      if (isGK && res.opponent === 0) cleanSheets++;
+      (goalScorers[f.id] || []).forEach(s => { if (s.player === p.name) goals += s.goals; });
+      const fixtureAttendance = attendance[f.id];
+      const status = fixtureAttendance ? fixtureAttendance[p.id] : 'yes';
+      if (status === 'yes' || status === undefined) played++;
+    });
+    rows.push([p.name, played, goals, isGK ? cleanSheets : '', coachesPotm, parentsPotm].join(','));
+  });
+
+  // Squad section
+  rows.push('');
+  rows.push('SQUAD');
+  rows.push('Name');
+  squad.forEach(p => rows.push(p.name));
+
+  const csv = rows.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = teamName + '_season_' + date + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV downloaded!');
+}
+
 async function exportSeasonData() {
   showToast('Preparing export…');
   try {
