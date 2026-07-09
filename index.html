@@ -809,10 +809,10 @@ async function loadResults() {
 
 async function loadSquad() {
   try {
-    squad = await sbFetch('hurricanes_squad?select=*&order=shirt_number');
+    const all = await sbFetch('hurricanes_squad?select=*&order=shirt_number');
+    squad = all.filter(p => p.active !== false);
     if (squad.length > 0) PLAYERS = squad.map(p => p.name);
   } catch(e) {
-    // Table may not exist yet — fail silently and keep hardcoded PLAYERS
     squad = [];
   }
 }
@@ -1229,16 +1229,37 @@ function renderSquadAdminList() {
   const container = document.getElementById('squadAdminList');
   if (!container) return;
   if (squadAdmin.length === 0) { container.innerHTML = '<div class="empty-state">No players added yet</div>'; return; }
-  let html = '<table class="table"><tr><th>#</th><th>Name</th><th></th></tr>';
+  let html = '<table class="table"><tr><th>Name</th><th>Status</th><th></th></tr>';
   squadAdmin.forEach(p => {
-    html += '<tr>' +
-      '<td>' + (p.shirt_number != null ? p.shirt_number : '-') + '</td>' +
+    const isActive = p.active !== false;
+    const statusLabel = isActive
+      ? '<span style="color:var(--green);font-weight:600;font-size:11px;">Active</span>'
+      : '<span style="color:var(--grey-400);font-size:11px;">Left</span>';
+    const toggleLabel = isActive ? 'Mark Left' : 'Reinstate';
+    const toggleStyle = isActive ? 'btn btn-danger' : 'btn btn-secondary';
+    html += '<tr style="' + (isActive ? '' : 'opacity:0.5;') + '">' +
       '<td>' + p.name + '</td>' +
-      '<td><button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="deleteSquadPlayer(' + p.id + ')">Remove</button></td>' +
+      '<td>' + statusLabel + '</td>' +
+      '<td style="display:flex;gap:6px;">' +
+        '<button class="btn ' + toggleStyle + '" style="padding:4px 8px;font-size:11px;" onclick="toggleSquadPlayerActive(' + p.id + ',' + isActive + ')">' + toggleLabel + '</button>' +
+        '<button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="deleteSquadPlayer(' + p.id + ')">Delete</button>' +
+      '</td>' +
       '</tr>';
   });
   html += '</table>';
   container.innerHTML = html;
+}
+
+async function toggleSquadPlayerActive(id, currentlyActive) {
+  try {
+    await sbFetch('hurricanes_squad?id=eq.' + id, {
+      method: 'PATCH',
+      body: JSON.stringify({ active: !currentlyActive })
+    });
+    await loadSquadAdmin(); renderSquadAdminList();
+    await loadSquad(); renderSquad(); renderPlayerStats();
+    showToast(currentlyActive ? 'Player marked as left' : 'Player reinstated');
+  } catch(e) { showToast('Error: ' + e.message, true); }
 }
 
 async function addSquadPlayer() {
