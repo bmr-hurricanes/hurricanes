@@ -235,8 +235,8 @@
     margin: 8px auto 0;
   }
   .next-match-detail {
-    font-size: 13px;
-    color: rgba(255,255,255,0.65);
+    font-size: 16px;
+    color: rgba(255,255,255,0.8);
     margin-bottom: 14px;
   }
   .next-match-times {
@@ -681,7 +681,7 @@ async function renderAdminContent(email) {
       <h3>Add Fixture</h3>
       <div class="form-group"><label>Opponent</label><input type="text" id="fixtureOpponent" placeholder="e.g., Village Vipers"></div>
       <div class="form-group"><label>Date</label><input type="date" id="fixtureDate"></div>
-      <div class="form-group"><label>Meet Time (optional)</label><input type="time" id="fixtureMeetTime"></div>
+      <div class="form-group"><label>Meet Time (optional)</label><input type="time" id="fixtureMeetTime" onchange="autoFillKickoff('fixtureMeetTime','fixtureTime')"></div>
       <div class="form-group"><label>Kick-off Time</label><input type="time" id="fixtureTime"></div>
       <div class="form-group">
         <label>Home or Away?</label>
@@ -701,7 +701,7 @@ async function renderAdminContent(email) {
       <div id="editFixtureForm" style="display:none;">
         <div class="form-group"><label>Opponent</label><input type="text" id="editFixtureOpponent"></div>
         <div class="form-group"><label>Date</label><input type="date" id="editFixtureDate"></div>
-        <div class="form-group"><label>Meet Time (optional)</label><input type="time" id="editFixtureMeetTime"></div>
+        <div class="form-group"><label>Meet Time (optional)</label><input type="time" id="editFixtureMeetTime" onchange="autoFillKickoff('editFixtureMeetTime','editFixtureTime')"></div>
         <div class="form-group"><label>Kick-off Time</label><input type="time" id="editFixtureTime"></div>
         <div class="form-group">
           <label>Home or Away?</label>
@@ -869,6 +869,15 @@ function timeInputValue(isoString) {
 
 function mapLink(location) {
   return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(location);
+}
+
+function autoFillKickoff(meetId, kickoffId) {
+  const meetVal = document.getElementById(meetId).value;
+  const kickoffEl = document.getElementById(kickoffId);
+  if (!meetVal || kickoffEl.value) return; // don't overwrite if kickoff already set
+  const [h, m] = meetVal.split(':').map(Number);
+  const d = new Date(2000, 0, 1, h, m + 30);
+  kickoffEl.value = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
 }
 
 function buildNotesLine(comments, light) {
