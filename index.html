@@ -204,7 +204,7 @@
   .next-match-card {
     background: linear-gradient(135deg, var(--primary) 0%, #1a1a1a 100%);
     border-radius: 12px;
-    padding: 24px 20px;
+    padding: 20px 20px 18px;
     margin-bottom: 20px;
     box-shadow: 0 4px 16px rgba(0,0,0,0.25);
     text-align: center;
@@ -213,37 +213,38 @@
   }
   .next-match-label {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 14px;
+    font-size: 13px;
     letter-spacing: 2px;
-    color: rgba(255,255,255,0.55);
-    margin-bottom: 12px;
+    color: rgba(255,255,255,0.45);
+    margin-bottom: 10px;
   }
   .next-match-teams {
     font-family: 'Bebas Neue', sans-serif;
     font-size: 26px;
     letter-spacing: 1px;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
     display: inline-block;
   }
   .next-match-teams::after {
     content: '';
     display: block;
-    width: 50px;
+    width: 70px;
     height: 3px;
     background: var(--gold);
     border-radius: 2px;
-    margin: 8px auto 0;
+    margin: 6px auto 0;
   }
   .next-match-detail {
-    font-size: 16px;
-    color: rgba(255,255,255,0.8);
-    margin-bottom: 14px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.65);
+    margin-bottom: 8px;
   }
   .next-match-times {
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 34px;
-    color: var(--white);
+    font-size: 24px;
+    color: rgba(255,255,255,0.9);
     line-height: 1;
+    margin-top: 10px;
   }
   .match-scorers {
     font-size: 11px;
@@ -873,11 +874,10 @@ function mapLink(location) {
 
 function autoFillKickoff(meetId, kickoffId) {
   const meetVal = document.getElementById(meetId).value;
-  const kickoffEl = document.getElementById(kickoffId);
-  if (!meetVal || kickoffEl.value) return; // don't overwrite if kickoff already set
+  if (!meetVal) return;
   const [h, m] = meetVal.split(':').map(Number);
   const d = new Date(2000, 0, 1, h, m + 30);
-  kickoffEl.value = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  document.getElementById(kickoffId).value = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
 }
 
 function buildNotesLine(comments, light) {
@@ -1026,13 +1026,15 @@ function renderFixtures() {
       ? 'Meet ' + nextMatch.meet_time.slice(11, 16) + ' · KO ' + koStr
       : 'KO ' + koStr;
     const locationLine = nextMatch.location
-      ? '<div class="next-match-detail"><a href="' + mapLink(nextMatch.location) + '" target="_blank" rel="noopener" style="color:rgba(255,255,255,0.8);">📍 ' + nextMatch.location + '</a></div>'
+      ? '<div class="next-match-detail"><a href="' + mapLink(nextMatch.location) + '" target="_blank" rel="noopener" style="color:rgba(255,255,255,0.65);text-decoration:none;font-size:13px;">📍 ' + nextMatch.location + ' · ' + nextMatch.home_away + ' · ' + formatDate(nextMatch.date) + '</a></div>'
+      : '<div class="next-match-detail">' + nextMatch.home_away + ' · ' + formatDate(nextMatch.date) + '</div>';
+    const commentsLine = nextMatch.comments
+      ? '<div style="font-size:11px;color:rgba(255,255,255,0.4);font-style:italic;margin-bottom:6px;">' + nextMatch.comments + '</div>'
       : '';
     html += '<div class="next-match-card">' +
       '<div class="next-match-label">NEXT MATCH</div>' +
       '<div class="next-match-teams">Hurricanes vs ' + nextMatch.opponent + '</div>' +
-      '<div class="next-match-detail">' + formatDate(nextMatch.date) + ' · ' + nextMatch.home_away + '</div>' +
-      locationLine + buildNotesLine(nextMatch.comments) +
+      locationLine + commentsLine +
       '<div class="next-match-times">' + timesDisplay + '</div>' +
       '</div>';
   } else if (upcoming.length === 0 && fixtures.length > 0) {
