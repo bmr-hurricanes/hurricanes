@@ -1008,17 +1008,45 @@ function renderFixtures() {
   const container = document.getElementById('fixturesContent');
   if (fixtures.length === 0) { container.innerHTML = '<div class="empty-state">No fixtures added yet</div>'; return; }
   const now = new Date();
+  const teamName = (config && config.team_name) ? config.team_name.replace(/.*Hurricanes.*/i, 'Hurricanes').trim() || 'Hurricanes' : 'Hurricanes';
+
+  // Check for a live match: draft result + kickoff within last 3 hours or next 15 minutes
+  let liveFixture = null;
+  fixtures.forEach(f => {
+    if (!drafts[f.id]) return;
+    const kickoff = new Date(f.kickoff_time);
+    const diff = now - kickoff; // ms since kickoff (positive = past)
+    if (diff >= -15 * 60 * 1000 && diff <= 3 * 60 * 60 * 1000) {
+      liveFixture = f;
+    }
+  });
 
   let nextMatch = null;
   fixtures.forEach(f => {
     const kickoff = new Date(f.kickoff_time);
-    if (results[f.id] === undefined && kickoff > now && (!nextMatch || kickoff < new Date(nextMatch.kickoff_time))) {
+    if (!results[f.id] && !drafts[f.id] && kickoff > now && (!nextMatch || kickoff < new Date(nextMatch.kickoff_time))) {
       nextMatch = f;
     }
   });
 
-  const upcoming = fixtures.filter(f => results[f.id] === undefined && (!nextMatch || f.id !== nextMatch.id));
+  const upcoming = fixtures.filter(f => !results[f.id] && !drafts[f.id] && (!nextMatch || f.id !== nextMatch.id) && new Date(f.kickoff_time) > now);
   let html = '';
+
+  if (liveFixture) {
+    const draft = drafts[liveFixture.id];
+    const scorers = goalScorers[liveFixture.id] || [];
+    let scorerLine = '';
+    if (scorers.length > 0) {
+      scorerLine = scorers.map(s => s.goals > 1 ? s.player + ' (' + s.goals + ')' : s.player).join(' · ');
+    }
+    html += '<div class="next-match-card" style="border-bottom-color:var(--gold);">' +
+      '<div class="next-match-label" style="color:var(--gold);letter-spacing:3px;">🔴 LIVE</div>' +
+      '<div class="next-match-teams">' + teamName + ' vs ' + liveFixture.opponent + '</div>' +
+      '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:52px;color:var(--gold);line-height:1;margin:10px 0;">' + draft.hurricanes + ' – ' + draft.opponent + '</div>' +
+      (scorerLine ? '<div style="font-size:12px;color:rgba(255,255,255,0.7);margin-bottom:10px;">⚽ ' + scorerLine + '</div>' : '') +
+      '<div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:6px;">Updates every 5 minutes · pull down to refresh now</div>' +
+      '</div>';
+  }
 
   if (nextMatch) {
     const koStr = nextMatch.kickoff_time ? nextMatch.kickoff_time.slice(11, 16) : '';
@@ -1037,7 +1065,7 @@ function renderFixtures() {
       locationLine + commentsLine +
       '<div class="next-match-times">' + timesDisplay + '</div>' +
       '</div>';
-  } else if (upcoming.length === 0 && fixtures.length > 0) {
+  } else if (!liveFixture && upcoming.length === 0 && fixtures.length > 0) {
     html += '<div class="next-match-card"><div class="next-match-label">SEASON COMPLETE</div><div class="next-match-teams">All fixtures played</div></div>';
   }
 
@@ -1688,6 +1716,14 @@ function showToast(msg, error = false) {
 }
 
 init();
+
+// 5-minute polling — only fires when Fixtures tab is active and page is visible
+setInterval(() => {
+  const fixturesTabActive = document.getElementById('tab-fixtures') && document.getElementById('tab-fixtures').classList.contains('active');
+  if (fixturesTabActive && document.visibilityState === 'visible') {
+    loadAndRender().catch(() => {});
+  }
+}, 5 * 60 * 1000);
 
 // Show install banner if not already installed or dismissed
 (function() {
