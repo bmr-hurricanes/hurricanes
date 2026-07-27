@@ -1027,6 +1027,23 @@ function buildMatchCard(f) {
   let narrativeLine = '';
   if (isPlayed && res.narrative) {
     narrativeLine = '<div style="grid-column:1/-1;text-align:center;font-size:11px;color:var(--grey-400);font-style:italic;margin-top:-6px;">' + res.narrative + '</div>';
+  } else if (isPlayed) {
+    // Build a contextual line from snapshots only if data exists
+    const snaps = snapshots[f.id] || [];
+    if (snaps.length > 0) {
+      const wasLeading = snaps.some(s => s.h > s.o);
+      const wasTrailing = snaps.some(s => s.h < s.o);
+      const won = res.hurricanes > res.opponent;
+      const drew = res.hurricanes === res.opponent;
+      const lost = res.hurricanes < res.opponent;
+      let contextLine = '';
+      if (won && wasTrailing) contextLine = 'Won from behind';
+      else if (lost && wasLeading) contextLine = 'Lost after leading';
+      else if (drew && wasTrailing && !wasLeading) contextLine = 'Drew after coming from behind';
+      if (contextLine) {
+        narrativeLine = '<div style="grid-column:1/-1;text-align:center;font-size:11px;color:var(--grey-400);font-style:italic;margin-top:-6px;">' + contextLine + '</div>';
+      }
+    }
   }
 
   let shareButton = '';
@@ -1161,35 +1178,6 @@ function renderResults() {
     (formHtml ? '<div style="margin-top:20px;"><div style="font-size:12px;font-weight:600;color:var(--grey-600);margin-bottom:6px;">LAST 10 MATCHES</div><div class="form-string">' + formHtml.trim() + '</div></div>' : '') +
     '</div>';
 
-  // Season Story pills — built from snapshot sequences
-  const story = { winsFromBehind: 0, winsNeverHeaded: 0, lossesAfterLeading: 0, lossesNeverAhead: 0, drawsAfterLeading: 0 };
-  playedFixtures.forEach(f => {
-    const res = results[f.id];
-    const snaps = snapshots[f.id] || [];
-    const wasLeading = snaps.some(s => s.h > s.o);
-    const wasTrailing = snaps.some(s => s.h < s.o);
-    const won = res.hurricanes > res.opponent;
-    const drew = res.hurricanes === res.opponent;
-    const lost = res.hurricanes < res.opponent;
-    if (won && wasTrailing) story.winsFromBehind++;
-    if (won && !wasTrailing) story.winsNeverHeaded++;
-    if (lost && wasLeading) story.lossesAfterLeading++;
-    if (lost && !wasLeading) story.lossesNeverAhead++;
-    if (drew && wasLeading) story.drawsAfterLeading++;
-  });
-  const pills = [
-    { label: 'Comeback wins', count: story.winsFromBehind, colour: 'var(--green)' },
-    { label: 'Never behind', count: story.winsNeverHeaded, colour: '#2563eb' },
-    { label: 'Led then lost', count: story.lossesAfterLeading, colour: 'var(--red)' },
-    { label: 'Never led', count: story.lossesNeverAhead, colour: 'var(--grey-400)' },
-    { label: 'Led then drew', count: story.drawsAfterLeading, colour: '#d97706' },
-  ].filter(p => p.count > 0);
-  if (pills.length > 0) {
-    html += '<div style="margin-bottom:16px;"><div style="font-size:12px;font-weight:600;color:var(--grey-600);margin-bottom:8px;">SEASON STORY</div>' +
-      '<div style="display:flex;flex-wrap:wrap;gap:6px;">' +
-      pills.map(p => '<span style="background:' + p.colour + ';color:#fff;border-radius:20px;padding:4px 12px;font-size:11px;font-weight:600;">' + p.count + ' ' + p.label + '</span>').join('') +
-      '</div></div>';
-  }
 
   [...playedFixtures].reverse().forEach(f => { html += buildMatchCard(f); });
   container.innerHTML = html;
