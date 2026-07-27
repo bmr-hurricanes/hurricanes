@@ -383,7 +383,7 @@
     </div>
   </div>
   <div style="display:flex;flex-direction:column;gap:6px;position:relative;z-index:1;">
-    <a id="headerClubLink" href="https://bmrfc.co.uk/youth/" target="_blank" rel="noopener" title="Club site" style="display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);width:38px;height:38px;border-radius:8px;font-size:18px;text-decoration:none;">🌐</a>
+    <button onclick="shareApp()" title="Share app" aria-label="Share app" style="display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);width:38px;height:38px;border-radius:8px;font-size:18px;cursor:pointer;">📤</button>
     <button onclick="switchTab('admin')" title="Manage" aria-label="Admin" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.6);width:38px;height:38px;border-radius:8px;font-size:16px;cursor:pointer;">⚙</button>
   </div>
 </header>
@@ -406,10 +406,6 @@
 
   <div id="tab-scorers" class="tab-content">
     <div id="scorersContent"><div class="loading-overlay">Loading stats…</div></div>
-  </div>
-
-  <div id="tab-squad" class="tab-content">
-    <div class="section"><h3>Squad</h3><div id="squadContent"><div class="loading-overlay">Loading squad…</div></div></div>
   </div>
 
   <div id="tab-admin" class="tab-content">
@@ -455,10 +451,6 @@
   <button class="nav-item" onclick="switchTab('scorers')" id="nav-scorers">
     <span class="nav-icon">🏅</span>
     <span class="nav-label">Stats</span>
-  </button>
-  <button class="nav-item" onclick="switchTab('squad')" id="nav-squad">
-    <span class="nav-icon">⚽</span>
-    <span class="nav-label">Squad</span>
   </button>
 </nav>
 
@@ -527,7 +519,6 @@ async function loadAndRender() {
   renderFixtures();
   renderResults();
   renderPlayerStats();
-  renderSquad();
   populateMatchSelect();
   populateEditFixtureSelect();
 }
@@ -562,9 +553,7 @@ function applyConfig() {
       : config.sponsor2_name);
   } else { s2.innerHTML = ''; }
 
-  const clubLink = document.getElementById('headerClubLink');
-  if (config.club_url) { clubLink.href = config.club_url; clubLink.style.display = 'flex'; }
-  else { clubLink.style.display = 'none'; }
+
 
   if (config.primary_colour) {
     document.documentElement.style.setProperty('--primary', config.primary_colour);
@@ -573,6 +562,16 @@ function applyConfig() {
   if (config.accent_colour) document.documentElement.style.setProperty('--gold', config.accent_colour);
 }
 
+function shareApp() {
+  const url = window.location.href;
+  const teamName = (config && config.team_name) || 'BMR Hurricanes';
+  const text = teamName + ' — results, stats and player info for the season.';
+  if (navigator.share) {
+    navigator.share({ title: teamName, text, url }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(url).then(() => showToast('Link copied!')).catch(() => showToast('Copy failed', true));
+  }
+}
 function shadeColour(hex, percent) {
   // Darkens (negative percent) or lightens (positive) a hex colour
   let h = hex.replace('#', '');
@@ -898,7 +897,7 @@ function generateNarrative(fixtureId, finalH, finalO) {
 
 // ── Tabs ──────────────────────────────────────────────────────────────────
 function switchTab(name) {
-  ['fixtures','results','scorers','squad'].forEach(id => {
+  ['fixtures','results','scorers'].forEach(id => {
     const el = document.getElementById('nav-' + id);
     if (el) el.classList.toggle('active', id === name);
   });
@@ -1046,7 +1045,7 @@ function buildMatchCard(f) {
 
   let locationLine = '';
   if (f.location && !isPlayed) {
-    locationLine = '<div class="match-scorers" style="grid-column:1/-1;"><a href="' + mapLink(f.location) + '" target="_blank" rel="noopener" style="color:var(--primary);">📍 ' + f.location + '</a></div>';
+    locationLine = '<div class="match-scorers" style="grid-column:1/-1;"><a href="' + mapLink(f.location) + '" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none;">' + f.location + '</a></div>';
   }
 
   return '<div class="match-card">' +
@@ -1284,20 +1283,6 @@ function renderPlayerStats() {
     html += '<tr><td>' + s.name + '</td><td>' + s.played + '</td><td>' + s.goals + '</td><td>' + csDisplay + '</td><td>' + s.coachesPotm + '</td><td>' + s.parentsPotm + '</td></tr>';
   });
   html += '</table><div style="font-size:11px;color:var(--grey-400);margin-top:10px;">P = matches played · Goals = total goals scored · CS = clean sheets (GK only) · 🏅 = Coaches POTM · ⭐ = Parents POTM · tap column to sort</div></div>';
-  container.innerHTML = html;
-}
-
-// ── Squad tab ─────────────────────────────────────────────────────────────
-function renderSquad() {
-  const container = document.getElementById('squadContent');
-  if (squad.length === 0) { container.innerHTML = '<div class="empty-state">Squad list coming soon</div>'; return; }
-  let html = '';
-  squad.forEach(p => {
-    const position = p.name === 'Billy' ? '<span style="font-size:11px;color:var(--grey-400);margin-left:8px;">GK</span>' : '';
-    html += '<div class="leaderboard-item">' +
-      '<div class="leaderboard-name">' + p.name + position + '</div>' +
-      '</div>';
-  });
   container.innerHTML = html;
 }
 
