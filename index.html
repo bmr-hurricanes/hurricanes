@@ -666,6 +666,8 @@ async function renderAdminContent(email) {
       <button onclick="signOutAdmin()" style="background:none;border:none;cursor:pointer;font-size:13px;font-weight:600;color:var(--grey-400);font-family:'Inter',sans-serif;padding:0;">Sign out</button>
     </div>
 
+    <div id="liveAdminCard" style="display:none;"></div>
+
     <div class="section">
       <button onclick="toggleSquadAdmin()" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:0;width:100%;text-align:left;">
         <h3 style="margin:0;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;color:var(--primary);">Squad</h3>
@@ -726,6 +728,7 @@ async function renderAdminContent(email) {
 
     <div class="section">
       <h3>Enter Match Result</h3>
+      <p style="font-size:12px;color:var(--grey-400);margin-top:-12px;margin-bottom:14px;">Published results can be corrected — select, update and tap Publish Result again.</p>
       <div class="form-group">
         <label>Select Match</label>
         <select id="matchSelect" onchange="loadMatchForResult()"><option value="">-- Select a match --</option></select>
@@ -800,6 +803,126 @@ async function renderAdminContent(email) {
   `;
   populateMatchSelect();
   populateEditFixtureSelect();
+  renderLiveAdminCard();
+}
+
+// ── Live admin card ───────────────────────────────────────────────────────
+let liveAdminState = { fixtureId: null, h: 0, o: 0 };
+
+function renderLiveAdminCard() {
+  const card = document.getElementById('liveAdminCard');
+  if (!card) return;
+  const now = new Date();
+  let liveFixture = null;
+  fixtures.forEach(f => {
+    const kickoff = new Date(f.kickoff_time);
+    const diff = now - kickoff;
+    if (diff >= -15 * 60 * 1000 && diff <= 3 * 60 * 60 * 1000) {
+      if (!results[f.id]) liveFixture = f; // only if not yet published
+    }
+  });
+  if (!liveFixture) { card.style.display = 'none'; return; }
+
+  // Init or sync state
+  if (liveAdminState.fixtureId !== liveFixture.id) {
+    const draft = drafts[liveFixture.id];
+    liveAdminState = {
+      fixtureId: liveFixture.id,
+      h: draft ? draft.hurricanes : 0,
+      o: draft ? draft.opponent : 0
+    };
+  }
+
+  const scorerOptions = '<option value="">-- Scorer --</option>' + PLAYERS.map(p => '<option>' + p + '</option>').join('') + '<option value="Own Goal">⚽ Own Goal</option>';
+  const teamName = config && config.team_name ? 'Hurricanes' : 'Hurricanes';
+
+  card.style.display = 'block';
+  card.innerHTML = '<div style="background:linear-gradient(135deg,var(--primary) 0%,#1a1a1a 100%);border-radius:12px;padding:20px;margin-bottom:16px;color:#fff;border-bottom:3px solid var(--gold);">' +
+    '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:13px;letter-spacing:3px;color:var(--gold);margin-bottom:10px;">🔴 LIVE ADMIN</div>' +
+    '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:18px;margin-bottom:14px;">' + teamName + ' vs ' + liveFixture.opponent + '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin-bottom:16px;">' +
+      '<div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;">' +
+        '<button onclick="liveAdjust(\'h\',-1)" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:36px;height:36px;border-radius:8px;font-size:18px;cursor:pointer;">−</button>' +
+        '<span id="liveScoreH" style="font-family:\'Bebas Neue\',sans-serif;font-size:42px;color:var(--gold);min-width:32px;text-align:center;">' + liveAdminState.h + '</span>' +
+        '<button onclick="liveAdjust(\'h\',1)" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:36px;height:36px;border-radius:8px;font-size:18px;cursor:pointer;">+</button>' +
+      '</div>' +
+      '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:24px;color:rgba(255,255,255,0.4);">–</div>' +
+      '<div style="display:flex;align-items:center;justify-content:flex-start;gap:8px;">' +
+        '<button onclick="liveAdjust(\'o\',-1)" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:36px;height:36px;border-radius:8px;font-size:18px;cursor:pointer;">−</button>' +
+        '<span id="liveScoreO" style="font-family:\'Bebas Neue\',sans-serif;font-size:42px;color:rgba(255,255,255,0.9);min-width:32px;text-align:center;">' + liveAdminState.o + '</span>' +
+        '<button onclick="liveAdjust(\'o\',1)" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:36px;height:36px;border-radius:8px;font-size:18px;cursor:pointer;">+</button>' +
+      '</div>' +
+    '</div>' +
+    '<div style="display:flex;gap:8px;margin-bottom:14px;">' +
+      '<select id="liveScorerSelect" style="flex:1;padding:8px;border-radius:6px;border:none;font-size:13px;font-family:Inter,sans-serif;">' + scorerOptions + '</select>' +
+      '<button onclick="liveAddGoal()" style="background:var(--gold);color:var(--primary-dark);border:none;border-radius:6px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;">Add Goal</button>' +
+    '</div>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+      '<button onclick="livePublish()" style="background:var(--gold);color:var(--primary-dark);border:none;border-radius:6px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;flex:1;">Publish Full Time</button>' +
+      '<button onclick="liveOpenForm()" style="background:rgba(255,255,255,0.1);color:#fff;border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:10px 14px;font-size:13px;cursor:pointer;font-family:Inter,sans-serif;">Full form ↓</button>' +
+    '</div>' +
+    '</div>';
+}
+
+function liveAdjust(side, delta) {
+  if (side === 'h') {
+    liveAdminState.h = Math.max(0, liveAdminState.h + delta);
+    const el = document.getElementById('liveScoreH');
+    if (el) el.textContent = liveAdminState.h;
+  } else {
+    liveAdminState.o = Math.max(0, liveAdminState.o + delta);
+    const el = document.getElementById('liveScoreO');
+    if (el) el.textContent = liveAdminState.o;
+  }
+}
+
+function liveAddGoal() {
+  const sel = document.getElementById('liveScorerSelect');
+  const scorer = sel ? sel.value : '';
+  if (!scorer) { showToast('Select a scorer first', true); return; }
+  liveAdjust('h', 1);
+  // Add to the main goal scorers form so Save Draft picks it up
+  const matchSelect = document.getElementById('matchSelect');
+  if (matchSelect && matchSelect.value !== String(liveAdminState.fixtureId)) {
+    matchSelect.value = liveAdminState.fixtureId;
+    loadMatchForResult();
+  }
+  const list = document.getElementById('goalScorersList');
+  if (list) {
+    list.innerHTML += '<div class="goal-inputs">' +
+      '<select><option selected>' + scorer + '</option><option value="Own Goal">⚽ Own Goal</option>' + PLAYERS.map(p => '<option>' + p + '</option>').join('') + '</select>' +
+      '<input type="number" value="1" min="0">' +
+      '<button class="btn" style="padding:6px 12px;" onclick="this.parentElement.remove()">Remove</button>' +
+      '</div>';
+  }
+  document.getElementById('hurricanesGoals').value = liveAdminState.h;
+  if (sel) sel.value = '';
+  showToast('Goal added — tap Save Draft to save');
+}
+
+async function livePublish() {
+  const matchSelect = document.getElementById('matchSelect');
+  if (matchSelect.value !== String(liveAdminState.fixtureId)) {
+    matchSelect.value = liveAdminState.fixtureId;
+    loadMatchForResult();
+  }
+  document.getElementById('hurricanesGoals').value = liveAdminState.h;
+  document.getElementById('opponentGoals').value = liveAdminState.o;
+  await saveResult(true);
+  liveAdminState = { fixtureId: null, h: 0, o: 0 };
+  renderLiveAdminCard();
+}
+
+function liveOpenForm() {
+  const matchSelect = document.getElementById('matchSelect');
+  if (matchSelect) {
+    matchSelect.value = liveAdminState.fixtureId;
+    loadMatchForResult();
+    document.getElementById('hurricanesGoals').value = liveAdminState.h;
+    document.getElementById('opponentGoals').value = liveAdminState.o;
+  }
+  const section = document.querySelector('#adminContent .section:nth-of-type(4)');
+  if (section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ── Data loading ──────────────────────────────────────────────────────────
@@ -1236,7 +1359,7 @@ function renderPlayerStats() {
       if (res.coachesPotm === p.name) coachesPotm++;
       if (res.parentsPotm === p.name) parentsPotm++;
       if (isGK && res.opponent === 0) cleanSheets++;
-      (goalScorers[f.id] || []).forEach(s => { if (s.player === p.name) goals += s.goals; });
+      (goalScorers[f.id] || []).forEach(s => { if (s.player === p.name && s.player !== 'Own Goal') goals += s.goals; });
       const fixtureAttendance = attendance[f.id];
       // If no attendance record exists for this fixture, assume played (back-compat with matches recorded before attendance existed)
       const status = fixtureAttendance ? fixtureAttendance[p.id] : 'yes';
@@ -1536,7 +1659,7 @@ function loadMatchForResult() {
   list.innerHTML = '';
   scorers.forEach(s => {
     list.innerHTML += '<div class="goal-inputs">' +
-      '<select><option selected>' + s.player + '</option>' + PLAYERS.map(p => '<option>' + p + '</option>').join('') + '</select>' +
+      '<select><option selected>' + s.player + '</option><option value="Own Goal">⚽ Own Goal</option>' + PLAYERS.map(p => '<option>' + p + '</option>').join('') + '</select>' +
       '<input type="number" value="' + s.goals + '" min="0">' +
       '<button class="btn" style="padding:6px 12px;" onclick="this.parentElement.remove()">Remove</button>' +
       '</div>';
@@ -1580,7 +1703,7 @@ function toggleAttendance(btn) {
 function addGoalScorerInput() {
   const list = document.getElementById('goalScorersList');
   list.innerHTML += '<div class="goal-inputs">' +
-    '<select><option value="">-- Select player --</option>' + PLAYERS.map(p => '<option>' + p + '</option>').join('') + '</select>' +
+    '<select><option value="">-- Select player --</option><option value="Own Goal">⚽ Own Goal</option>' + PLAYERS.map(p => '<option>' + p + '</option>').join('') + '</select>' +
     '<input type="number" value="1" min="0">' +
     '<button class="btn" style="padding:6px 12px;" onclick="this.parentElement.remove()">Remove</button>' +
     '</div>';
@@ -1692,7 +1815,7 @@ function exportSeasonCSV() {
       if (res.coachesPotm === p.name) coachesPotm++;
       if (res.parentsPotm === p.name) parentsPotm++;
       if (isGK && res.opponent === 0) cleanSheets++;
-      (goalScorers[f.id] || []).forEach(s => { if (s.player === p.name) goals += s.goals; });
+      (goalScorers[f.id] || []).forEach(s => { if (s.player === p.name && s.player !== 'Own Goal') goals += s.goals; });
       const fixtureAttendance = attendance[f.id];
       const status = fixtureAttendance ? fixtureAttendance[p.id] : 'yes';
       if (status === 'yes' || status === undefined) played++;
