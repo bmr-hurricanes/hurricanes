@@ -377,7 +377,7 @@
     <img id="headerCrest" src="https://raw.githubusercontent.com/bmr-hurricanes/hurricanes/main/apple-touch-icon.png" alt="Team crest" style="width:72px;height:72px;border-radius:50%;border:2px solid var(--gold);flex-shrink:0;object-fit:cover;">
     <div>
       <h1 id="headerTeamName">Baffins Milton Rovers Hurricanes</h1>
-      <div class="header-meta" id="headerCoaches">Coaches: Sam Game &amp; Chad Clarke</div>
+      <div class="header-meta" id="headerCoaches">Coaches: Sam Game &amp; Vacant</div>
       <div class="header-meta" id="headerSponsor1" style="margin-top:2px;"></div>
       <div class="header-meta" id="headerSponsor2"></div>
     </div>
@@ -478,7 +478,7 @@ let config = {};
 
 const CONFIG_DEFAULTS = {
   team_name: 'Baffins Milton Rovers Hurricanes',
-  coaches: 'Sam Game & Chad Clarke',
+  coaches: 'Sam Game & Vacant',
   sponsor1_name: 'JWM Consultants',
   sponsor1_url: 'https://jwmconstructionconsultants.co.uk/',
   sponsor2_name: 'Hants Heating & Plumbing Solutions',
@@ -1361,9 +1361,11 @@ function renderPlayerStats() {
       if (isGK && res.opponent === 0) cleanSheets++;
       (goalScorers[f.id] || []).forEach(s => { if (s.player === p.name && s.player !== 'Own Goal') goals += s.goals; });
       const fixtureAttendance = attendance[f.id];
-      // If no attendance record exists for this fixture, assume played (back-compat with matches recorded before attendance existed)
-      const status = fixtureAttendance ? fixtureAttendance[p.id] : 'yes';
-      if (status === 'yes' || status === undefined) played++;
+      // If this fixture has no attendance rows at all, it predates attendance tracking — assume all squad played
+      // If the fixture has rows but this player has no row, they weren't in the squad yet — don't count
+      const fixtureHasAttendance = fixtureAttendance && Object.keys(fixtureAttendance).length > 0;
+      const status = fixtureHasAttendance ? fixtureAttendance[p.id] : 'yes';
+      if (status === 'yes') played++;
     });
     return { name: p.name, goals, coachesPotm, parentsPotm, cleanSheets, isGK, played };
   });
@@ -1503,11 +1505,24 @@ async function addSquadPlayer() {
   const shirtNumber = numberVal ? parseInt(numberVal) : null;
   if (!name) { showToast('Enter a name', true); return; }
   try {
-    await sbFetch('hurricanes_squad', { method: 'POST', body: JSON.stringify([{ name, shirt_number: shirtNumber }]) });
+    const newPlayer = await sbFetch('hurricanes_squad', { method: 'POST', body: JSON.stringify([{ name, shirt_number: shirtNumber }]) });
     document.getElementById('squadName').value = '';
     document.getElementById('squadNumber').value = '';
+    // Only default attendance for fixtures with no result yet (future/unplayed)
+    if (newPlayer && newPlayer[0]) {
+      const playerId = newPlayer[0].id;
+      const unplayed = fixtures.filter(f => !results[f.id] && !drafts[f.id]);
+      if (unplayed.length > 0) {
+        const rows = unplayed.map(f => ({ fixture_id: f.id, player_id: playerId, status: 'yes' }));
+        await sbFetch('match_attendance', {
+          method: 'POST',
+          headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
+          body: JSON.stringify(rows)
+        });
+      }
+    }
     await loadSquadAdmin(); renderSquadAdminList();
-    await loadSquad(); renderSquad(); renderPlayerStats();
+    await loadSquad(); renderPlayerStats();
     showToast('Player added!');
   } catch(e) { showToast('Error: ' + e.message, true); }
 }
