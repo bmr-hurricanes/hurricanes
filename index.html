@@ -1513,11 +1513,15 @@ function populateMatchSelect() {
   if (!select) return;
   select.innerHTML = '<option value="">-- Select a match --</option>';
   // Only offer the most recently played fixture, not the full season history.
-  // fixtures is ordered ascending by kickoff_time, so the last entry with a
-  // past kickoff is the most recent match.
+  // fixtures is ordered ascending by kickoff_time, so the last entry that
+  // qualifies is the most recent/current match. The 15-minute grace period
+  // matches the live admin card's own window (see renderLiveAdminCard), so
+  // the dropdown already includes the upcoming match by the time the live
+  // card appears and "Full form ↓" can find it.
   const now = new Date();
-  const played = fixtures.filter(f => new Date(f.kickoff_time) <= now);
-  const lastMatch = played.length > 0 ? played[played.length - 1] : (fixtures.length > 0 ? fixtures[fixtures.length - 1] : null);
+  const cutoff = new Date(now.getTime() + 15 * 60 * 1000);
+  const eligible = fixtures.filter(f => new Date(f.kickoff_time) <= cutoff);
+  const lastMatch = eligible.length > 0 ? eligible[eligible.length - 1] : (fixtures.length > 0 ? fixtures[fixtures.length - 1] : null);
   if (lastMatch) {
     const f = lastMatch;
     let status = '';
