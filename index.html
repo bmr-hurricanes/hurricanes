@@ -470,7 +470,6 @@ let PLAYERS = ['Billy', 'Blake', 'Cooper', 'Ethan', 'Freddie', 'Harry', 'Hayes',
 let fixtures = [];
 let results = {};
 let drafts = {};
-let snapshots = {}; // fixture_id -> array of {hurricanes_goals, opponent_goals, recorded_at}
 let goalScorers = {};
 let squad = [];
 let attendance = {}; // fixture_id -> { player_id: status }
@@ -514,7 +513,6 @@ async function loadAndRender() {
   await loadResults();
   await loadSquad();
   await loadAttendance();
-  await loadSnapshots();
   applyConfig();
   renderFixtures();
   renderResults();
@@ -761,10 +759,6 @@ async function renderAdminContent(email) {
         <div id="draftStatus" style="display:none;background:var(--gold);color:var(--primary-dark);border-radius:8px;padding:10px 14px;font-size:12px;font-weight:600;margin-top:16px;">
           📝 Draft saved — parents cannot see this yet
         </div>
-        <div class="form-group" style="margin-top:16px;">
-          <label>Match Narrative <span style="font-weight:400;color:var(--grey-400);">(auto-generated on publish, editable)</span></label>
-          <textarea id="matchNarrative" rows="3" placeholder="Will be generated from score snapshots when you publish…"></textarea>
-        </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
           <button class="btn" style="background:var(--grey-600);" onclick="saveResult(false)">Save Draft</button>
           <button class="btn" onclick="saveResult(true)">Publish Result</button>
@@ -894,10 +888,6 @@ async function liveDraftSave() {
     if (scorerRows.length > 0) {
       await sbFetch('goal_scorers', { method: 'POST', body: JSON.stringify(scorerRows) });
     }
-    await sbFetch('score_snapshots', {
-      method: 'POST',
-      body: JSON.stringify([{ fixture_id: fId, hurricanes_goals: liveAdminState.h, opponent_goals: liveAdminState.o }])
-    });
     await loadResults();
     // Update live score on fixtures tab without full re-render
     renderFixtures();
@@ -981,8 +971,7 @@ async function loadResults() {
       opponent: r.opponent_goals,
       coachesPotm: r.coaches_potm,
       parentsPotm: r.parents_potm,
-      published: r.published !== false,
-      narrative: r.narrative || null
+      published: r.published !== false
     };
     if (entry.published) {
       results[r.fixture_id] = entry;
@@ -1019,44 +1008,6 @@ async function loadAttendance() {
   } catch(e) {
     attendance = {};
   }
-}
-
-async function loadSnapshots() {
-  try {
-    const rows = await sbFetch('score_snapshots?select=*&order=recorded_at');
-    snapshots = {};
-    rows.forEach(r => {
-      if (!snapshots[r.fixture_id]) snapshots[r.fixture_id] = [];
-      snapshots[r.fixture_id].push({ h: r.hurricanes_goals, o: r.opponent_goals, at: r.recorded_at });
-    });
-  } catch(e) {
-    snapshots = {};
-  }
-}
-
-function generateNarrative(fixtureId, finalH, finalO) {
-  const snaps = snapshots[fixtureId] || [];
-  if (snaps.length === 0) {
-    if (finalH > finalO) return 'A hard-fought win for the Hurricanes.';
-    if (finalH === finalO) return 'A battling draw — the lads gave everything.';
-    return 'Heads held high after a tough defeat.';
-  }
-  const wasLeading = snaps.some(s => s.h > s.o);
-  const wasTrailing = snaps.some(s => s.h < s.o);
-  const neverBehind = !wasTrailing;
-  const neverAhead = !wasLeading;
-  const won = finalH > finalO;
-  const drew = finalH === finalO;
-  const lost = finalH < finalO;
-  if (won && wasTrailing && !wasLeading) return 'Brilliant comeback — the Hurricanes came from behind to take all three points.';
-  if (won && wasTrailing && wasLeading) return 'A dramatic turnaround — the Hurricanes led, fell behind, then found a winner.';
-  if (won && neverBehind) return 'Dominant display — the Hurricanes were never headed.';
-  if (drew && wasLeading) return 'Frustrating draw — the Hurricanes had the lead but couldn\'t hold on.';
-  if (drew && wasTrailing && !wasLeading) return 'A resilient point — the Hurricanes fought back from behind to level.';
-  if (drew) return 'An evenly-matched draw — both sides had their moments.';
-  if (lost && wasLeading) return 'Unfortunate defeat — the Hurricanes led but couldn\'t hold on.';
-  if (lost && neverAhead) return 'A tough afternoon — the Hurricanes couldn\'t find a way back into it.';
-  return 'A hard-fought match that could have gone either way.';
 }
 
 // ── Tabs ──────────────────────────────────────────────────────────────────
@@ -1189,28 +1140,6 @@ function buildMatchCard(f) {
     potmLine += '</div>';
   }
 
-  let narrativeLine = '';
-  if (isPlayed && res.narrative) {
-    narrativeLine = '<div style="grid-column:1/-1;text-align:center;font-size:11px;color:var(--grey-400);font-style:italic;margin-top:-6px;">' + res.narrative + '</div>';
-  } else if (isPlayed) {
-    // Build a contextual line from snapshots only if data exists
-    const snaps = snapshots[f.id] || [];
-    if (snaps.length > 0) {
-      const wasLeading = snaps.some(s => s.h > s.o);
-      const wasTrailing = snaps.some(s => s.h < s.o);
-      const won = res.hurricanes > res.opponent;
-      const drew = res.hurricanes === res.opponent;
-      const lost = res.hurricanes < res.opponent;
-      let contextLine = '';
-      if (won && wasTrailing) contextLine = 'Won from behind';
-      else if (lost && wasLeading) contextLine = 'Lost after leading';
-      else if (drew && wasTrailing && !wasLeading) contextLine = 'Drew after coming from behind';
-      if (contextLine) {
-        narrativeLine = '<div style="grid-column:1/-1;text-align:center;font-size:11px;color:var(--grey-400);font-style:italic;margin-top:-6px;">' + contextLine + '</div>';
-      }
-    }
-  }
-
   let shareButton = '';
   // Share is admin-only — triggered from Enter Match Result after saving
 
@@ -1236,7 +1165,7 @@ function buildMatchCard(f) {
     '<div class="match-team away">' + f.opponent + '<div class="match-meta">' + (result ? result : f.home_away) + '</div></div>' +
     timesLine + locationLine +
     (!isPlayed ? buildNotesLine(f.comments, true) : '') +
-    scorersLine + potmLine + narrativeLine + shareButton +
+    scorersLine + potmLine + shareButton +
     '</div>';
 }
 
@@ -1583,12 +1512,19 @@ function populateMatchSelect() {
   const select = document.getElementById('matchSelect');
   if (!select) return;
   select.innerHTML = '<option value="">-- Select a match --</option>';
-  fixtures.forEach(f => {
+  // Only offer the most recently played fixture, not the full season history.
+  // fixtures is ordered ascending by kickoff_time, so the last entry with a
+  // past kickoff is the most recent match.
+  const now = new Date();
+  const played = fixtures.filter(f => new Date(f.kickoff_time) <= now);
+  const lastMatch = played.length > 0 ? played[played.length - 1] : (fixtures.length > 0 ? fixtures[fixtures.length - 1] : null);
+  if (lastMatch) {
+    const f = lastMatch;
     let status = '';
     if (results[f.id]) status = ' ✓ published';
     else if (drafts[f.id]) status = ' 📝 draft';
     select.innerHTML += '<option value="' + f.id + '">' + f.opponent + ' (' + f.date + ')' + status + '</option>';
-  });
+  }
 }
 
 function populateEditFixtureSelect() {
@@ -1709,8 +1645,6 @@ function loadMatchForResult() {
   document.getElementById('opponentGoals').value = res.opponent != null ? res.opponent : '';
   document.getElementById('coachesPotmSelect').value = res.coachesPotm || '';
   document.getElementById('parentsPotmSelect').value = res.parentsPotm || '';
-  const narrativeEl = document.getElementById('matchNarrative');
-  if (narrativeEl) narrativeEl.value = res.narrative || '';
   const scorers = goalScorers[matchId] || [];
   const list = document.getElementById('goalScorersList');
   list.innerHTML = '';
@@ -1785,29 +1719,17 @@ async function saveResult(publish) {
     return;
   }
 
-  // Auto-generate narrative on publish if textarea is empty
-  const narrativeEl = document.getElementById('matchNarrative');
-  if (publish && narrativeEl && !narrativeEl.value.trim()) {
-    narrativeEl.value = generateNarrative(matchId, hurricanesGoals, opponentGoals);
-  }
-  const narrative = narrativeEl ? narrativeEl.value.trim() || null : null;
-
   if (publish && !confirm('Publish result? Parents will see this immediately.')) return;
   try {
     await sbFetch('match_results?fixture_id=eq.' + matchId, { method: 'DELETE' });
     await sbFetch('goal_scorers?fixture_id=eq.' + matchId, { method: 'DELETE' });
     await sbFetch('match_results', {
       method: 'POST',
-      body: JSON.stringify([{ fixture_id: matchId, hurricanes_goals: hurricanesGoals, opponent_goals: opponentGoals, coaches_potm: coachesPotm, parents_potm: parentsPotm, published: publish, narrative: publish ? narrative : null }])
+      body: JSON.stringify([{ fixture_id: matchId, hurricanes_goals: hurricanesGoals, opponent_goals: opponentGoals, coaches_potm: coachesPotm, parents_potm: parentsPotm, published: publish }])
     });
     if (scorers.length > 0) {
       await sbFetch('goal_scorers', { method: 'POST', body: JSON.stringify(scorers) });
     }
-    // Insert score snapshot on every save (draft or publish)
-    await sbFetch('score_snapshots', {
-      method: 'POST',
-      body: JSON.stringify([{ fixture_id: matchId, hurricanes_goals: hurricanesGoals, opponent_goals: opponentGoals }])
-    });
     const attendanceButtons = document.querySelectorAll('#attendanceList button[data-player-id]');
     if (attendanceButtons.length > 0) {
       const attendanceRows = Array.from(attendanceButtons).map(btn => ({
@@ -1821,7 +1743,7 @@ async function saveResult(publish) {
         body: JSON.stringify(attendanceRows)
       });
     }
-    await loadResults(); await loadAttendance(); await loadSnapshots(); renderFixtures(); renderResults(); renderPlayerStats();
+    await loadResults(); await loadAttendance(); renderFixtures(); renderResults(); renderPlayerStats();
 
     if (publish) {
       document.getElementById('resultForm').style.display = 'none';
